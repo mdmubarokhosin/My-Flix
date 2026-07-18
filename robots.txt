@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Allow: /tma-sdk.js
+Allow: /tma-bootstrap.js
+Disallow: /admin.html
+Disallow: /docs/

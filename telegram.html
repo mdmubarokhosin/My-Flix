@@ -1,0 +1,2512 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#060b08">
+    <title>HY3 ChatBot — Telegram Mini App</title>
+
+    <!-- Telegram Mini App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Bengali:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ============== ডিজাইন টোকেন (Brand-fixed, টেলিগ্রাম ওভাররাইট করবে না) ============== */
+        :root {
+            --accent:#059669;--accent-d:#047857;--accent-b:#10b981;
+            --accent-glow:rgba(5,150,105,.12);--accent-glow2:rgba(5,150,105,.07);
+            --typing-bg:#059669;
+            --danger:#ef4444;--danger-h:#dc2626;
+            --warning:#f59e0b;--warning-bg:rgba(245,158,11,.1);--warning-bd:rgba(245,158,11,.25);
+            --success:#10b981;
+            --premium-1:#fbbf24;--premium-2:#f59e0b;
+            --on-accent:#ffffff;
+            --bg:#f3f5f4;--surface:#ffffff;--surface-a:rgba(255,255,255,.82);
+            --card:#eaeff0;--card-h:#dde3e1;--card-a:rgba(234,239,240,.9);
+            --fg:#0f1a13;--fg2:#3a4d40;--muted:#6b8072;--muted-l:#94a89c;
+            --border:#cdd7d0;--border-l:#b8c5bc;
+            --code-bg:#e4eae6;--code-bd:#c8d2cb;--code-head:#dde3e1;
+            --code-text:#0f1a13;
+            --shadow:rgba(0,0,0,.06);--shadow-lg:rgba(0,0,0,.12);
+            --overlay:rgba(0,0,0,.32);--scroll:#c2cdc6;--scroll-h:#a5b5aa;
+            --tg-header:#ffffff;--tg-bg:#f3f5f4;
+            --font-scale:1;
+        }
+        [data-theme="dark"]{
+            --bg:#060b08;--surface:#0d1510;--surface-a:rgba(13,21,16,.82);
+            --card:#131e18;--card-h:#1a2c22;--card-a:rgba(19,30,24,.92);
+            --fg:#dfe9e2;--fg2:#a8bfb0;--muted:#5a7365;--muted-l:#7d9686;
+            --border:#1a2d22;--border-l:#24382b;
+            --code-bg:#0a110d;--code-bd:#1a2d22;--code-head:#131e18;
+            --code-text:#dfe9e2;
+            --shadow:rgba(0,0,0,.22);--shadow-lg:rgba(0,0,0,.45);
+            --overlay:rgba(0,0,0,.62);--scroll:#1a2d22;--scroll-h:#24382b;
+            --tg-header:#0d1510;--tg-bg:#060b08;
+        }
+
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%}
+        body{
+            font-family:'Noto Sans Bengali',sans-serif;
+            background:var(--bg);color:var(--fg);
+            height:100dvh;overflow:hidden;
+            transition:background-color .3s ease,color .3s ease;
+            -webkit-tap-highlight-color:transparent;
+            -webkit-font-smoothing:antialiased;
+            text-rendering:optimizeLegibility;
+            font-size:calc(15px * var(--font-scale));
+        }
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:4px}
+        ::-webkit-scrollbar-thumb:hover{background:var(--scroll-h)}
+        button{font-family:inherit}
+        input,textarea{font-family:inherit}
+
+        /* ============== অ্যানিমেশন ============== */
+        @keyframes dotB{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+        .d1{animation:dotB 1.4s infinite 0s}.d2{animation:dotB 1.4s infinite .15s}.d3{animation:dotB 1.4s infinite .3s}
+        @keyframes msgIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+        .msg-in{animation:msgIn .32s cubic-bezier(.22,1,.36,1)}
+        @keyframes glow{0%,100%{transform:translate(0,0) scale(1);opacity:.22}50%{transform:translate(30px,-20px) scale(1.12);opacity:.12}}
+        .bg-g1{animation:glow 16s ease-in-out infinite}
+        .bg-g2{animation:glow 22s ease-in-out infinite reverse}
+        @keyframes pulseR{0%{transform:scale(.85);opacity:.45}100%{transform:scale(1.4);opacity:0}}
+        .pulse-r{animation:pulseR 2.6s ease-out infinite}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        .shimmer{
+            background:linear-gradient(90deg,var(--accent),var(--accent-b),#6ee7b7,var(--accent-b),var(--accent));
+            background-size:200% auto;
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;animation:shimmer 4s linear infinite;
+        }
+        @keyframes tIn{from{opacity:0;transform:translateY(14px) scale(.95)}to{opacity:1;transform:none}}
+        @keyframes tOut{to{opacity:0;transform:translateY(14px) scale(.95)}}
+        .t-in{animation:tIn .28s ease-out}
+        .t-out{animation:tOut .22s ease-in forwards}
+        @keyframes stopP{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0)}}
+        .stop-p{animation:stopP 1.8s ease-in-out infinite}
+        @keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spin{animation:spin 1s linear infinite}
+        @keyframes micPulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}70%{box-shadow:0 0 0 12px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+        .mic-pulse{animation:micPulse 1.4s ease-out infinite}
+        @keyframes waveB{0%,100%{height:6px}50%{height:18px}}
+        .wave-bar{animation:waveB .9s ease-in-out infinite;background:var(--accent);width:3px;border-radius:2px}
+        .wave-bar:nth-child(2){animation-delay:.15s}
+        .wave-bar:nth-child(3){animation-delay:.3s}
+        .wave-bar:nth-child(4){animation-delay:.45s}
+        .wave-bar:nth-child(5){animation-delay:.6s}
+
+        /* ============== লেআউট হেল্পার ============== */
+        .sidebar-t{transition:transform .32s cubic-bezier(.4,0,.2,1)}
+        body.sb-open{overflow:hidden}
+        *:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+        .thm-trans,.thm-trans *{transition:background-color .32s ease,color .32s ease,border-color .32s ease,box-shadow .32s ease!important}
+
+        /* ============== মেসেজ কন্টেন্ট ============== */
+        .mc pre{
+            position:relative;
+            background:var(--code-bg);
+            border:1px solid var(--code-bd);
+            border-radius:10px;
+            margin:10px 0;
+            overflow:hidden;
+            font-family:'JetBrains Mono',monospace;
+            font-size:12.5px;
+            line-height:1.65;
+        }
+        .mc pre .code-head{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:6px 12px;
+            background:var(--code-head);
+            border-bottom:1px solid var(--code-bd);
+            font-size:10.5px;
+            color:var(--muted);
+            font-family:'JetBrains Mono',monospace;
+            font-weight:500;
+            letter-spacing:.5px;
+            text-transform:uppercase;
+        }
+        .mc pre .code-head .code-lang{display:flex;align-items:center;gap:6px}
+        .mc pre .code-head .code-lang i{font-size:11px;color:var(--accent-b)}
+        .mc pre .code-copy{
+            display:flex;align-items:center;gap:4px;
+            padding:3px 8px;border-radius:6px;border:none;
+            background:transparent;color:var(--muted);
+            cursor:pointer;font-size:10.5px;font-family:inherit;
+            transition:all .2s;
+        }
+        .mc pre .code-copy:hover{background:var(--card-h);color:var(--fg)}
+        .mc pre .code-copy:active{transform:scale(.94)}
+        .mc pre .code-copy.copied{color:var(--accent-b)}
+        .mc pre code{
+            display:block;
+            padding:12px 14px;
+            overflow-x:auto;
+            background:none;border:none;
+            color:var(--code-text);
+            font-family:'JetBrains Mono',monospace;
+            font-size:12.5px;
+            white-space:pre;
+        }
+        .mc code{
+            background:var(--code-bg);border:1px solid var(--code-bd);
+            border-radius:4px;padding:1px 5px;
+            font-family:'JetBrains Mono',monospace;font-size:12.5px;
+            color:var(--accent-b);
+        }
+        .mc pre code{color:var(--code-text)}
+        .mc p{margin-bottom:.35em}.mc p:last-child{margin-bottom:0}
+        .mc ul,.mc ol{padding-left:1.4em;margin:.35em 0}.mc li{margin-bottom:.15em}
+        .mc strong{color:var(--accent-b);font-weight:600}
+        .mc h1,.mc h2,.mc h3{font-weight:700;margin:.5em 0 .25em;color:var(--fg)}
+        .mc h1{font-size:1.2em}.mc h2{font-size:1.1em}.mc h3{font-size:1.02em}
+        .mc a{color:var(--accent-b);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
+        .mc em{font-style:italic}
+        .mc blockquote{border-left:3px solid var(--accent);padding-left:12px;margin:6px 0;color:var(--muted-l);font-style:italic}
+        .mc hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+        .mc table{border-collapse:collapse;width:100%;margin:8px 0;font-size:12px;display:block;overflow-x:auto}
+        .mc th,.mc td{border:1px solid var(--border);padding:6px 10px;text-align:left}
+        .mc th{background:var(--card-h);font-weight:600;color:var(--fg)}
+        .mc td{color:var(--fg2)}
+
+        /* ============== ইনপুট ============== */
+        .inp{background:var(--card);border:1px solid var(--border);color:var(--fg);transition:border-color .2s,box-shadow .2s}
+        .inp::placeholder{color:var(--muted)}
+        .inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);outline:none}
+
+        /* ============== থিম সুইচ ============== */
+        .t-sw{width:42px;height:24px;background:var(--border);border-radius:12px;position:relative;cursor:pointer;transition:background .25s;flex-shrink:0;border:none}
+        .t-sw.on{background:var(--accent)}
+        .t-sw::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+        .t-sw.on::after{transform:translateX(18px)}
+
+        /* ============== প্রোফাইল অ্যাভাটার ============== */
+        .avatar{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--on-accent);flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,var(--accent),var(--accent-d));position:relative;user-select:none}
+        .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+        .premium-badge{position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--premium-1),var(--premium-2));display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+        .premium-badge i{font-size:9px;color:#fff}
+
+        /* ============== প্রোফাইল প্যানেল ============== */
+        #profPanel{transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1)}
+        #profPanel.open{transform:translateX(0)}
+
+        /* ============== ব্যাকগ্রাউন্ড glow ============== */
+        .bg-decor{transition:background-color .3s ease}
+
+        /* ============== সেফ এরিয়া ============== */
+        .safe-top{padding-top:env(safe-area-inset-top)}
+        .safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
+        .safe-left{padding-left:env(safe-area-inset-left)}
+        .safe-right{padding-right:env(safe-area-inset-right)}
+
+        /* ============== মেসেজ অ্যাকশন বার ============== */
+        .msg-actions{display:flex;gap:2px;margin-top:6px;opacity:0;transition:opacity .2s}
+        .msg-bubble:hover .msg-actions,.msg-bubble.show-actions .msg-actions{opacity:1}
+        @media(hover:none){.msg-actions{opacity:.85}}
+        .msg-act-btn{
+            display:flex;align-items:center;gap:3px;
+            padding:3px 7px;border-radius:6px;border:none;
+            background:transparent;color:inherit;opacity:.6;
+            cursor:pointer;font-size:10.5px;font-family:inherit;
+            transition:all .15s;
+        }
+        .msg-act-btn:hover{opacity:1;background:rgba(0,0,0,.06)}
+        [data-theme="dark"] .msg-act-btn:hover{background:rgba(255,255,255,.06)}
+        .msg-act-btn:active{transform:scale(.9)}
+        .msg-act-btn.active{opacity:1;color:var(--accent-b)}
+        .msg-act-btn i{font-size:11px}
+
+        /* ============== রিজেনারেট বাটন ============== */
+        .regen-btn{
+            display:inline-flex;align-items:center;gap:5px;
+            padding:5px 12px;border-radius:8px;border:1px solid var(--border);
+            background:var(--card);color:var(--fg2);
+            cursor:pointer;font-size:11.5px;font-family:inherit;
+            transition:all .2s;margin-top:8px;
+        }
+        .regen-btn:hover{border-color:var(--accent);color:var(--accent-b);background:var(--accent-glow)}
+        .regen-btn:active{transform:scale(.97)}
+
+        /* ============== রেঞ্জ স্লাইডার ============== */
+        input[type="range"]{
+            -webkit-appearance:none;appearance:none;
+            width:100%;height:5px;background:var(--border);border-radius:5px;outline:none;
+        }
+        input[type="range"]::-webkit-slider-thumb{
+            -webkit-appearance:none;appearance:none;
+            width:18px;height:18px;background:var(--accent);border-radius:50%;cursor:pointer;
+            box-shadow:0 0 0 3px var(--accent-glow);
+        }
+        input[type="range"]::-moz-range-thumb{
+            width:18px;height:18px;background:var(--accent);border-radius:50%;cursor:pointer;border:none;
+            box-shadow:0 0 0 3px var(--accent-glow);
+        }
+
+        /* ============== চিপ গ্রুপ ============== */
+        .chip{
+            display:inline-flex;align-items:center;gap:5px;
+            padding:5px 11px;border-radius:20px;
+            background:var(--card);border:1px solid var(--border);
+            color:var(--fg2);font-size:11.5px;cursor:pointer;
+            transition:all .15s;user-select:none;
+        }
+        .chip:hover{border-color:var(--accent);color:var(--accent-b)}
+        .chip.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent-b);font-weight:500}
+
+        /* ============== সার্চ বার ============== */
+        .search-bar{
+            background:var(--card);border:1px solid var(--border);
+            border-radius:10px;padding:6px 10px;
+            display:flex;align-items:center;gap:6px;
+            transition:border-color .2s;
+        }
+        .search-bar:focus-within{border-color:var(--accent)}
+        .search-bar input{flex:1;background:transparent;border:none;outline:none;color:var(--fg);font-size:13px}
+        .search-bar input::placeholder{color:var(--muted)}
+
+        /* ============== রেসপন্সিভ ============== */
+        @media(max-width:640px){
+            .mc pre{font-size:11.5px}
+            .mc pre code{padding:10px 12px;font-size:11.5px}
+            .mc code{font-size:11.5px}
+        }
+
+        /* টেলিগ্রামে iOS এ input zoom প্রতিরোধ */
+        @media(max-width:640px){.inp{font-size:16px}}
+        .inp{font-size:14px}
+        @media(min-width:641px){.inp{font-size:14px}}
+
+        /* ইউজার প্রিফারেন্স: কম মোশন */
+        @media(prefers-reduced-motion:reduce){
+            *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+        }
+
+        /* হাইলাইট সার্চ */
+        mark.search-hl{background:rgba(245,158,11,.35);color:inherit;padding:0 2px;border-radius:2px}
+
+        /* ড্রয়ার ওভারলে */
+        .drawer-ov{transition:opacity .3s}
+        .drawer-ov.hidden{opacity:0;pointer-events:none}
+    </style>
+</head>
+<body>
+
+<!-- ব্যাকগ্রাউন্ড ডেকোরেশন -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <div class="bg-g1 bg-decor absolute -top-20 -right-20 w-[26rem] h-[26rem] rounded-full blur-[130px]" style="background:var(--accent-glow)"></div>
+    <div class="bg-g2 bg-decor absolute -bottom-28 -left-28 w-[22rem] h-[22rem] rounded-full blur-[110px]" style="background:var(--accent-glow2)"></div>
+</div>
+
+<!-- সাইডবার ওভারলে -->
+<div id="sbOv" class="fixed inset-0 z-40 hidden backdrop-blur-sm" style="background:var(--overlay)" aria-hidden="true"></div>
+
+<!-- সাইডবার -->
+<aside id="sb" class="fixed left-0 top-0 bottom-0 w-[17rem] z-50 sidebar-t -translate-x-full flex flex-col border-r safe-top" style="background:var(--surface);border-color:var(--border)" aria-label="চ্যাট তালিকা">
+    <div class="p-4 border-b flex items-center justify-between flex-shrink-0" style="border-color:var(--border)">
+        <h2 class="text-base font-bold" style="color:var(--fg)">চ্যাট তালিকা</h2>
+        <button id="sbClose" class="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="বন্ধ">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="p-3 flex-shrink-0 space-y-2">
+        <button id="newChatBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer border transition-all active:scale-[.97]" style="background:var(--accent-glow);color:var(--accent);border-color:transparent">
+            <i class="bi bi-plus-lg"></i> নতুন চ্যাট
+        </button>
+        <div class="search-bar">
+            <i class="bi bi-search text-xs" style="color:var(--muted)"></i>
+            <input type="text" id="chatSearchIn" placeholder="চ্যাট খুঁজুন..." autocomplete="off">
+            <button id="chatSearchClr" class="hidden" style="color:var(--muted);background:transparent;border:none;cursor:pointer;padding:2px" aria-label="মুছুন">
+                <i class="bi bi-x-circle text-xs"></i>
+            </button>
+        </div>
+    </div>
+    <div id="chatList" class="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5" role="list"></div>
+    <div class="p-3 border-t flex-shrink-0 space-y-1" style="border-color:var(--border)">
+        <button id="profBtnSidebar" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-colors" style="color:var(--muted-l);background:transparent">
+            <i class="bi bi-person-circle"></i> প্রোফাইল
+        </button>
+        <button id="importBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-colors" style="color:var(--muted-l);background:transparent">
+            <i class="bi bi-file-earmark-arrow-up"></i> চ্যাট ইম্পোর্ট
+        </button>
+        <button id="clearAllBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-colors" style="color:var(--muted);background:transparent">
+            <i class="bi bi-trash3"></i> সব চ্যাট মুছুন
+        </button>
+        <button id="settBtn" class="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm cursor-pointer transition-colors" style="color:var(--muted-l);background:transparent">
+            <i class="bi bi-gear"></i> সেটিংস
+        </button>
+    </div>
+</aside>
+
+<!-- মূল কন্টেন্ট -->
+<main class="relative flex flex-col h-[100dvh] z-10">
+    <!-- হেডার -->
+    <header class="flex-shrink-0 h-14 flex items-center justify-between px-3 sm:px-4 border-b backdrop-blur-lg safe-top" style="background:var(--surface-a);border-color:var(--border)">
+        <div class="flex items-center gap-2.5">
+            <button id="menuBtn" class="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="মেনু">
+                <i class="bi bi-list text-xl"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center border" style="background:var(--accent-glow);border-color:var(--accent);border-width:1px">
+                    <i class="bi bi-lightning-charge-fill text-sm" style="color:var(--accent)"></i>
+                </div>
+                <div class="hidden sm:block">
+                    <span class="font-bold text-sm leading-none" style="color:var(--fg)">HY3 ChatBot</span>
+                    <p class="text-[10px] leading-none mt-0.5" style="color:var(--muted)">Tencent Hunyuan-3</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <span id="mBadge" class="hidden sm:inline-block text-[11px] px-2.5 py-1 rounded-full font-mono border" style="background:var(--card);color:var(--muted);border-color:var(--border)">tencent/hy3:free</span>
+            <div id="stDot" class="w-2 h-2 rounded-full" style="background:var(--accent);opacity:.4" aria-hidden="true"></div>
+            <button id="searchBtn" class="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="মেসেজ সার্চ">
+                <i class="bi bi-search text-base"></i>
+            </button>
+            <button id="thmBtn" class="w-9 h-9 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="থিম পরিবর্তন">
+                <i class="bi bi-moon-fill text-base" id="thmIco"></i>
+            </button>
+            <button id="profBtn" class="w-9 h-9 rounded-full cursor-pointer overflow-hidden flex items-center justify-center ring-2 transition-transform active:scale-90" style="--tw-ring-color:var(--border);background:var(--card)" aria-label="প্রোফাইল খুলুন">
+                <div id="profAvatarSmall" class="avatar w-full h-full text-xs">?</div>
+            </button>
+        </div>
+    </header>
+
+    <!-- ইন-চ্যাট সার্চ বার -->
+    <div id="msgSearchBar" class="hidden flex-shrink-0 px-3 py-2 border-b" style="background:var(--surface);border-color:var(--border)">
+        <div class="max-w-3xl mx-auto flex items-center gap-2">
+            <div class="search-bar flex-1">
+                <i class="bi bi-search text-xs" style="color:var(--muted)"></i>
+                <input type="text" id="msgSearchIn" placeholder="এই চ্যাটে খুঁজুন..." autocomplete="off">
+                <span id="msgSearchCount" class="text-[10px] font-mono" style="color:var(--muted)"></span>
+                <button id="msgSearchClr" class="hidden" style="color:var(--muted);background:transparent;border:none;cursor:pointer;padding:2px" aria-label="মুছুন">
+                    <i class="bi bi-x-circle text-xs"></i>
+                </button>
+            </div>
+            <button id="msgSearchClose" class="text-xs px-3 py-1.5 rounded-lg cursor-pointer" style="color:var(--muted);background:transparent;border:1px solid var(--border)">বন্ধ</button>
+        </div>
+    </div>
+
+    <!-- চ্যাট এরিয়া -->
+    <div id="chatArea" class="flex-1 overflow-y-auto scroll-smooth">
+        <!-- ওয়েলকাম -->
+        <div id="welc" class="flex flex-col items-center justify-center h-full px-4 py-8">
+            <div class="relative mb-8">
+                <div class="w-24 h-24 rounded-3xl flex items-center justify-center relative z-10 border rotate-3" style="background:var(--accent-glow);border-color:var(--accent);border-width:1px">
+                    <i class="bi bi-lightning-charge-fill text-4xl -rotate-3" style="color:var(--accent)"></i>
+                </div>
+                <div class="absolute inset-0 w-24 h-24 rounded-3xl pulse-r" style="background:var(--accent-glow)"></div>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black mb-3 text-center">
+                <span class="shimmer">HY3</span> <span style="color:var(--fg)">চ্যাটবটে</span>
+            </h1>
+            <h2 id="welcName" class="text-lg sm:text-xl font-bold mb-2 text-center" style="color:var(--fg2)">স্বাগতম</h2>
+            <p class="text-sm text-center max-w-sm mb-8 leading-relaxed" style="color:var(--muted)">Tencent Hunyuan-3 দিয়ে চালিত আপনার বুদ্ধিমান সহকারী। যেকোনো প্রশ্ন করুন বা আলোচনা শুরু করুন।</p>
+            <div id="suggestGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg"></div>
+            <div id="apiWarn" class="hidden mt-8 p-3 rounded-xl text-center max-w-sm w-full border" style="background:var(--warning-bg);border-color:var(--warning-bd)">
+                <p class="text-xs flex items-center justify-center gap-1.5" style="color:var(--warning)">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    API Key সেট করা হয়নি। <button id="apiWarnBtn" class="underline hover:no-underline font-medium cursor-pointer" style="color:var(--warning)">সেটিংস খুলুন</button>
+                </p>
+            </div>
+        </div>
+        <!-- মেসেজ -->
+        <div id="msgC" class="hidden max-w-3xl mx-auto px-3 sm:px-4 py-6 space-y-4" role="log" aria-live="polite"></div>
+    </div>
+
+    <!-- ইনপুট -->
+    <div class="flex-shrink-0 border-t backdrop-blur-lg p-2.5 sm:p-4 safe-bottom" style="background:var(--surface-a);border-color:var(--border)">
+        <form id="chatForm" class="max-w-3xl mx-auto flex items-end gap-2">
+            <div class="flex-1 relative">
+                <textarea id="msgIn" rows="1" placeholder="আপনার বার্তা লিখুন..." class="w-full inp rounded-2xl px-4 py-3 pr-12 text-sm resize-none min-h-[46px] max-h-[160px] leading-relaxed" autocomplete="off"></textarea>
+                <button type="button" id="micBtn" class="absolute right-2 bottom-2 w-8 h-8 flex items-center justify-center rounded-full cursor-pointer transition-all" style="color:var(--muted);background:transparent" aria-label="ভয়েস ইনপুট">
+                    <i class="bi bi-mic text-base"></i>
+                </button>
+            </div>
+            <button type="submit" id="sendBtn" disabled class="flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed transition-transform active:scale-90 disabled:active:scale-100" style="background:var(--accent);color:var(--on-accent);box-shadow:0 4px 18px var(--accent-glow)" aria-label="পাঠান">
+                <i class="bi bi-send-fill text-lg"></i>
+            </button>
+            <button type="button" id="stopBtn" class="flex-shrink-0 w-11 h-11 rounded-2xl items-center justify-center cursor-pointer transition-transform active:scale-90 stop-p" style="display:none;background:var(--danger);color:#fff" aria-label="থামান">
+                <i class="bi bi-stop-fill text-lg"></i>
+            </button>
+        </form>
+        <p class="text-center text-[10px] sm:text-[11px] mt-2 max-w-3xl mx-auto" style="color:var(--muted);opacity:.55">HY3 ভুল তথ্য দিতে পারে। গুরুত্বপূর্ণ তথ্য যাচাই করুন।</p>
+    </div>
+</main>
+
+<!-- প্রোফাইল প্যানেল -->
+<aside id="profPanel" class="fixed right-0 top-0 bottom-0 w-full sm:w-[24rem] z-[55] flex flex-col border-l safe-top" style="background:var(--surface);border-color:var(--border)" aria-label="প্রোফাইল">
+    <div class="flex-shrink-0 p-5 border-b relative overflow-hidden" style="border-color:var(--border);background:linear-gradient(135deg,var(--accent-glow),transparent)">
+        <div class="flex items-center justify-between mb-4 relative z-10">
+            <h2 class="text-base font-bold" style="color:var(--fg)">আমার প্রোফাইল</h2>
+            <button id="profClose" class="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:var(--card)" aria-label="বন্ধ">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="flex items-center gap-4 relative z-10">
+            <div id="profAvatarLarge" class="avatar w-20 h-20 rounded-2xl text-2xl">?</div>
+            <div class="flex-1 min-w-0">
+                <h3 id="profName" class="text-lg font-bold truncate" style="color:var(--fg)">ইউজার</h3>
+                <p id="profUsername" class="text-sm truncate" style="color:var(--accent-b)"></p>
+                <div id="profPremium" class="hidden inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style="background:linear-gradient(135deg,var(--premium-1),var(--premium-2));color:#fff">
+                    <i class="bi bi-stars"></i> Premium
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-semibold uppercase tracking-wide" style="color:var(--muted)">বায়ো</label>
+                <button id="editBioBtn" class="text-[11px] flex items-center gap-1 cursor-pointer" style="color:var(--accent-b);background:transparent">
+                    <i class="bi bi-pencil"></i> সম্পাদনা
+                </button>
+            </div>
+            <div id="profBio" class="text-sm p-3 rounded-xl border min-h-[50px] leading-relaxed" style="background:var(--card);border-color:var(--border);color:var(--fg2)">কোনো বায়ো যুক্ত করা হয়নি।</div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--muted)">টেলিগ্রাম তথ্য</label>
+            <div class="rounded-xl border overflow-hidden" style="border-color:var(--border);background:var(--card)">
+                <div class="flex items-center justify-between px-3 py-2.5 border-b" style="border-color:var(--border)">
+                    <span class="text-xs flex items-center gap-2" style="color:var(--muted)"><i class="bi bi-hash"></i> ইউজার আইডি</span>
+                    <span id="profId" class="text-xs font-mono" style="color:var(--fg)">—</span>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2.5 border-b" style="border-color:var(--border)">
+                    <span class="text-xs flex items-center gap-2" style="color:var(--muted)"><i class="bi bi-translate"></i> ভাষা</span>
+                    <span id="profLang" class="text-xs" style="color:var(--fg)">—</span>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2.5 border-b" style="border-color:var(--border)">
+                    <span class="text-xs flex items-center gap-2" style="color:var(--muted)"><i class="bi bi-person-badge"></i> ইউজারনেম</span>
+                    <span id="profHandle" class="text-xs" style="color:var(--fg)">—</span>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2.5">
+                    <span class="text-xs flex items-center gap-2" style="color:var(--muted)"><i class="bi bi-calendar-event"></i> যুক্ত হয়েছে</span>
+                    <span id="profSince" class="text-xs" style="color:var(--fg)">—</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-xs font-semibold uppercase tracking-wide mb-2" style="color:var(--muted)">পরিসংখ্যান</label>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="p-3 rounded-xl border" style="background:var(--card);border-color:var(--border)">
+                    <div id="statChats" class="text-xl font-bold" style="color:var(--accent)">0</div>
+                    <div class="text-[10px] uppercase tracking-wide" style="color:var(--muted)">চ্যাট</div>
+                </div>
+                <div class="p-3 rounded-xl border" style="background:var(--card);border-color:var(--border)">
+                    <div id="statMsgs" class="text-xl font-bold" style="color:var(--accent)">0</div>
+                    <div class="text-[10px] uppercase tracking-wide" style="color:var(--muted)">মেসেজ</div>
+                </div>
+                <div class="p-3 rounded-xl border" style="background:var(--card);border-color:var(--border)">
+                    <div id="statTokens" class="text-xl font-bold" style="color:var(--accent)">0</div>
+                    <div class="text-[10px] uppercase tracking-wide" style="color:var(--muted)">অক্ষর</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-2 pt-2">
+            <button id="exportBtn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm cursor-pointer border transition-colors active:scale-[.98]" style="background:var(--card);border-color:var(--border);color:var(--fg)">
+                <i class="bi bi-file-earmark-arrow-down" style="color:var(--accent)"></i> চ্যাট এক্সপোর্ট
+            </button>
+            <button id="shareBtn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm cursor-pointer border transition-colors active:scale-[.98]" style="background:var(--card);border-color:var(--border);color:var(--fg)">
+                <i class="bi bi-share-fill" style="color:var(--accent)"></i> অ্যাপ শেয়ার করুন
+            </button>
+            <button id="cloudSyncBtn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm cursor-pointer border transition-colors active:scale-[.98]" style="background:var(--card);border-color:var(--border);color:var(--fg)">
+                <i class="bi bi-cloud-arrow-up" style="color:var(--accent)"></i> ক্লাউডে সিঙ্ক করুন
+            </button>
+            <button id="settBtn2" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm cursor-pointer border transition-colors active:scale-[.98]" style="background:var(--card);border-color:var(--border);color:var(--fg)">
+                <i class="bi bi-gear" style="color:var(--accent)"></i> সেটিংস
+            </button>
+            <button id="closeAppBtn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm cursor-pointer border transition-colors active:scale-[.98]" style="background:var(--card);border-color:var(--border);color:var(--fg)">
+                <i class="bi bi-box-arrow-right" style="color:var(--muted)"></i> অ্যাপ বন্ধ করুন
+            </button>
+        </div>
+    </div>
+</aside>
+
+<!-- সেটিংস মোডাল -->
+<div id="settMod" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="settTitle">
+    <div class="absolute inset-0 backdrop-blur-sm" id="settModOv" style="background:var(--overlay)"></div>
+    <div class="relative rounded-2xl w-full max-w-md max-h-[92vh] overflow-y-auto p-6 msg-in border" style="background:var(--surface);border-color:var(--border);box-shadow:0 8px 40px var(--shadow-lg)">
+        <div class="flex items-center justify-between mb-6">
+            <h2 id="settTitle" class="text-lg font-bold flex items-center gap-2" style="color:var(--fg)">
+                <i class="bi bi-gear" style="color:var(--accent)"></i> সেটিংস
+            </h2>
+            <button id="settClose" class="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="বন্ধ">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="space-y-5">
+            <div>
+                <label for="keyIn" class="block text-sm font-medium mb-2" style="color:var(--fg)">OpenRouter API Key</label>
+                <div class="relative">
+                    <input type="password" id="keyIn" placeholder="sk-or-v1-..." class="w-full inp rounded-xl px-4 py-3 text-sm pr-12 font-mono" autocomplete="off">
+                    <button type="button" id="keyVis" class="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer w-7 h-7 flex items-center justify-center rounded-md" style="color:var(--muted);background:transparent" aria-label="কী দেখান/লুকান">
+                        <i class="bi bi-eye" id="keyVisI"></i>
+                    </button>
+                </div>
+                <p class="text-xs mt-2 leading-relaxed" style="color:var(--muted)">
+                    <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="font-medium hover:underline" style="color:var(--accent-b)">openrouter.ai/keys</a> থেকে ফ্রি API Key নিন।
+                </p>
+            </div>
+            <div>
+                <label for="modIn" class="block text-sm font-medium mb-2" style="color:var(--fg)">মডেল</label>
+                <input type="text" id="modIn" value="tencent/hy3:free" class="w-full inp rounded-xl px-4 py-3 text-sm font-mono" autocomplete="off">
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                    <button type="button" class="chip model-chip" data-model="tencent/hy3:free">HY3 Free</button>
+                    <button type="button" class="chip model-chip" data-model="deepseek/deepseek-chat-v3.1:free">DeepSeek V3.1</button>
+                    <button type="button" class="chip model-chip" data-model="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B</button>
+                    <button type="button" class="chip model-chip" data-model="qwen/qwen-2.5-72b-instruct:free">Qwen 2.5 72B</button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color:var(--fg)">থিম</label>
+                <div class="flex items-center gap-3">
+                    <button type="button" id="thmSw" class="t-sw" aria-label="থিম টগল"></button>
+                    <span class="text-sm" id="thmLbl" style="color:var(--muted)">ডার্ক মোড</span>
+                    <span id="tgThemeBadge" class="hidden ml-auto text-[10px] px-2 py-0.5 rounded-full" style="background:var(--accent-glow);color:var(--accent-b)">টেলিগ্রাম সিঙ্ক</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color:var(--fg)">ফন্ট সাইজ <span id="fsLbl" class="text-xs ml-1" style="color:var(--muted)">সাধারণ</span></label>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="fontRange" min="0.85" max="1.25" step="0.05" value="1">
+                    <span id="fsVal" class="text-xs font-mono w-10" style="color:var(--muted)">100%</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color:var(--fg)">টেম্পারেচার <span id="tempLbl" class="text-xs ml-1" style="color:var(--muted)">সৃজনশীল</span></label>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="tempRange" min="0" max="2" step="0.1" value="0.7">
+                    <span id="tempVal" class="text-xs font-mono w-10" style="color:var(--muted)">0.7</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2" style="color:var(--fg)">সিস্টেম প্রম্পট</label>
+                <textarea id="sysIn" rows="2" placeholder="AI এর জন্য নির্দেশনা (ঐচ্ছিক)..." class="w-full inp rounded-xl px-4 py-3 text-sm resize-none leading-relaxed"></textarea>
+            </div>
+            <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm" style="color:var(--fg)">হ্যাপটিক ফিডব্যাক</span>
+                    <button type="button" id="hapticSw" class="t-sw on" aria-label="হ্যাপটিক টগল"></button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm" style="color:var(--fg)">স্ট্রিমিং উত্তর</span>
+                    <button type="button" id="streamSw" class="t-sw on" aria-label="স্ট্রিমিং টগল"></button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm" style="color:var(--fg)">অটো স্ক্রল</span>
+                    <button type="button" id="autoScrollSw" class="t-sw on" aria-label="অটো স্ক্রল টগল"></button>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-1">
+                <button type="button" id="saveBtn" class="flex-1 font-semibold py-3 rounded-xl text-sm cursor-pointer transition-transform active:scale-[.97]" style="background:var(--accent);color:var(--on-accent)">সংরক্ষণ করুন</button>
+                <button type="button" id="cancelBtn" class="px-5 py-3 rounded-xl text-sm cursor-pointer border transition-transform active:scale-[.97]" style="background:var(--card);color:var(--muted-l);border-color:var(--border)">বাতিল</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- বায়ো এডিট মোডাল -->
+<div id="bioMod" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="bioTitle">
+    <div class="absolute inset-0 backdrop-blur-sm" id="bioModOv" style="background:var(--overlay)"></div>
+    <div class="relative rounded-2xl w-full max-w-md p-6 msg-in border" style="background:var(--surface);border-color:var(--border);box-shadow:0 8px 40px var(--shadow-lg)">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="bioTitle" class="text-lg font-bold flex items-center gap-2" style="color:var(--fg)">
+                <i class="bi bi-pencil-square" style="color:var(--accent)"></i> বায়ো সম্পাদনা
+            </h2>
+            <button id="bioClose" class="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="বন্ধ">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <textarea id="bioIn" rows="4" maxlength="200" placeholder="নিজের সম্পর্কে কিছু লিখুন..." class="w-full inp rounded-xl px-4 py-3 text-sm resize-none leading-relaxed"></textarea>
+        <p class="text-[10px] mt-1 text-right" style="color:var(--muted)"><span id="bioCount">0</span>/200</p>
+        <div class="flex gap-2 mt-3">
+            <button type="button" id="bioSave" class="flex-1 font-semibold py-3 rounded-xl text-sm cursor-pointer transition-transform active:scale-[.97]" style="background:var(--accent);color:var(--on-accent)">সংরক্ষণ</button>
+            <button type="button" id="bioCancel" class="px-5 py-3 rounded-xl text-sm cursor-pointer border transition-transform active:scale-[.97]" style="background:var(--card);color:var(--muted-l);border-color:var(--border)">বাতিল</button>
+        </div>
+    </div>
+</div>
+
+<!-- এডিট মেসেজ মোডাল -->
+<div id="editMod" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="absolute inset-0 backdrop-blur-sm" id="editModOv" style="background:var(--overlay)"></div>
+    <div class="relative rounded-2xl w-full max-w-md p-6 msg-in border" style="background:var(--surface);border-color:var(--border);box-shadow:0 8px 40px var(--shadow-lg)">
+        <div class="flex items-center justify-between mb-4">
+            <h2 id="editTitle" class="text-lg font-bold flex items-center gap-2" style="color:var(--fg)">
+                <i class="bi bi-pencil" style="color:var(--accent)"></i> মেসেজ সম্পাদনা
+            </h2>
+            <button id="editClose" class="w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer transition-colors" style="color:var(--muted);background:transparent" aria-label="বন্ধ">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <textarea id="editIn" rows="5" placeholder="মেসেজ সম্পাদনা করুন..." class="w-full inp rounded-xl px-4 py-3 text-sm resize-none leading-relaxed"></textarea>
+        <p class="text-[10px] mt-1" style="color:var(--muted)">সম্পাদনা করলে এর পরের সকল মেসেজ মুছে যাবে ও নতুন উত্তর তৈরি হবে।</p>
+        <div class="flex gap-2 mt-3">
+            <button type="button" id="editSave" class="flex-1 font-semibold py-3 rounded-xl text-sm cursor-pointer transition-transform active:scale-[.97]" style="background:var(--accent);color:var(--on-accent)">পুনরায় পাঠান</button>
+            <button type="button" id="editCancel" class="px-5 py-3 rounded-xl text-sm cursor-pointer border transition-transform active:scale-[.97]" style="background:var(--card);color:var(--muted-l);border-color:var(--border)">বাতিল</button>
+        </div>
+    </div>
+</div>
+
+<!-- টোস্ট -->
+<div id="toasts" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[70] flex flex-col gap-2 items-center pointer-events-none" aria-live="polite"></div>
+
+<!-- লুকানো ফাইল ইনপুট (ইম্পোর্টের জন্য) -->
+<input type="file" id="fileInput" accept=".json,.txt" class="hidden">
+
+<script>
+(function(){
+    'use strict';
+
+    // ============================================================
+    //  টেলিগ্রাম WebApp রেফারেন্স
+    // ============================================================
+    const TG = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+    const tgUser = (TG && TG.initDataUnsafe) ? TG.initDataUnsafe.user : null;
+
+    // ============================================================
+    //  অ্যাপ স্টেট
+    // ============================================================
+    const S = {
+        convs: [], curId: null, msgs: [],
+        generating: false, apiKey: '', model: 'tencent/hy3:free',
+        theme: 'dark', abort: null,
+        user: null, bio: '',
+        userThemeOverride: false,
+        view: 'chat',
+        mdCache: new Map(),
+        scrollRafId: null,
+        settings: {
+            temperature: 0.7,
+            fontScale: 1,
+            haptic: true,
+            stream: true,
+            autoScroll: true,
+            systemPrompt: ''
+        },
+        searchQuery: '',
+        editingMsgIndex: -1,
+        recognition: null,
+        isListening: false,
+        isSpeaking: false,
+        currentSpeechUtterance: null,
+        currentStreamBubble: null
+    };
+
+    // ============================================================
+    //  লোকাল স্টোরেজ
+    // ============================================================
+    function load(){
+        try{ S.convs = JSON.parse(localStorage.getItem('hy3_c') || '[]'); }catch(e){ S.convs = []; }
+        S.apiKey = localStorage.getItem('hy3_k') || '';
+        S.model = localStorage.getItem('hy3_m') || 'tencent/hy3:free';
+        S.theme = localStorage.getItem('hy3_t') || 'dark';
+        S.bio = localStorage.getItem('hy3_bio') || '';
+        S.userThemeOverride = localStorage.getItem('hy3_to') === '1';
+        try{ S.user = JSON.parse(localStorage.getItem('hy3_u') || 'null'); }catch(e){ S.user = null; }
+        try{
+            const savedSettings = JSON.parse(localStorage.getItem('hy3_s') || '{}');
+            Object.assign(S.settings, savedSettings);
+        }catch(e){}
+
+        if(tgUser){
+            const prevSince = (S.user && S.user.since) ? S.user.since : Date.now();
+            S.user = {
+                id: tgUser.id,
+                first_name: tgUser.first_name || '',
+                last_name: tgUser.last_name || '',
+                username: tgUser.username || '',
+                language_code: tgUser.language_code || '',
+                photo_url: tgUser.photo_url || '',
+                is_premium: !!tgUser.is_premium,
+                allows_write_to_pm: !!tgUser.allows_write_to_pm,
+                since: prevSince
+            };
+            try{ localStorage.setItem('hy3_u', JSON.stringify(S.user)); }catch(e){}
+        }
+    }
+    function saveConvs(){
+        try{ localStorage.setItem('hy3_c', JSON.stringify(S.convs)); }catch(e){ console.warn('localStorage quota exceeded'); }
+    }
+    function saveSettings(){
+        try{ localStorage.setItem('hy3_s', JSON.stringify(S.settings)); }catch(e){}
+    }
+
+    // ============================================================
+    //  টেলিগ্রাম কালার পার্স হেল্পার
+    // ============================================================
+    function tgColor(c){
+        if(c == null) return null;
+        if(typeof c === 'string'){
+            const s = c.startsWith('#') ? c.slice(1) : c;
+            return /^([0-9a-f]{6})$/i.test(s) ? '#' + s.toLowerCase() : null;
+        }
+        if(typeof c === 'number'){
+            return '#' + c.toString(16).padStart(6, '0').toLowerCase();
+        }
+        return null;
+    }
+
+    // ============================================================
+    //  টেলিগ্রাম WebApp ইনিশিয়ালাইজেশন
+    // ============================================================
+    function initTelegram(){
+        if(!TG) return;
+        TG.ready();
+        TG.expand();
+        applyTelegramTheme();
+        if(TG.onEvent) TG.onEvent('themeChanged', applyTelegramTheme);
+        syncTelegramColors();
+    }
+
+    function applyTelegramTheme(){
+        if(!TG || !TG.themeParams) return;
+        if(TG.colorScheme && !S.userThemeOverride){
+            const tgScheme = TG.colorScheme;
+            if(tgScheme !== S.theme) setTheme(tgScheme, true);
+        }
+        const badge = document.getElementById('tgThemeBadge');
+        if(badge && TG.colorScheme) badge.classList.remove('hidden');
+        syncTelegramColors();
+    }
+
+    function syncTelegramColors(){
+        if(!TG) return;
+        try{
+            const isDark = S.theme === 'dark';
+            const headerColor = isDark ? '#0d1510' : '#ffffff';
+            const bgColor = isDark ? '#060b08' : '#f3f5f4';
+            if(TG.setHeaderColor) TG.setHeaderColor(headerColor);
+            if(TG.setBackgroundColor) TG.setBackgroundColor(bgColor);
+        }catch(e){}
+    }
+
+    // ============================================================
+    //  Haptic Feedback
+    // ============================================================
+    function haptic(type){
+        if(!S.settings.haptic) return;
+        if(!TG || !TG.HapticFeedback) return;
+        try{
+            const impacts = ['light','medium','heavy','rigid','soft'];
+            const notifs = ['success','error','warning'];
+            if(impacts.includes(type)) TG.HapticFeedback.impactOccurred(type);
+            else if(notifs.includes(type)) TG.HapticFeedback.notificationOccurred(type);
+            else if(type === 'select') TG.HapticFeedback.selectionChanged();
+        }catch(e){}
+    }
+
+    // ============================================================
+    //  Telegram BackButton
+    // ============================================================
+    function setupBackButton(){
+        if(!TG || !TG.BackButton) return;
+        TG.BackButton.onClick(() => {
+            if(!document.getElementById('settMod').classList.contains('hidden')) closeSett();
+            else if(!document.getElementById('bioMod').classList.contains('hidden')) closeBio();
+            else if(!document.getElementById('editMod').classList.contains('hidden')) closeEdit();
+            else if(document.getElementById('profPanel').classList.contains('open')) closeProfile();
+            else if(!document.getElementById('msgSearchBar').classList.contains('hidden')) closeMsgSearch();
+            else if(!document.getElementById('sb').classList.contains('-translate-x-full')) closeSb();
+        });
+    }
+    function updateBackButton(){
+        if(!TG || !TG.BackButton) return;
+        const anyOpen = !document.getElementById('settMod').classList.contains('hidden')
+            || !document.getElementById('bioMod').classList.contains('hidden')
+            || !document.getElementById('editMod').classList.contains('hidden')
+            || document.getElementById('profPanel').classList.contains('open')
+            || !document.getElementById('msgSearchBar').classList.contains('hidden')
+            || !document.getElementById('sb').classList.contains('-translate-x-full');
+        try{
+            if(anyOpen) TG.BackButton.show();
+            else TG.BackButton.hide();
+        }catch(e){}
+    }
+
+    // ============================================================
+    //  Telegram CloudStorage
+    // ============================================================
+    function cloudSave(key, value){
+        if(!TG || !TG.CloudStorage) return Promise.resolve(false);
+        return new Promise((resolve) => {
+            try{ TG.CloudStorage.setItem(key, String(value), (err, ok) => resolve(!err && ok)); }
+            catch(e){ resolve(false); }
+        });
+    }
+    function cloudLoad(key){
+        if(!TG || !TG.CloudStorage) return Promise.resolve(null);
+        return new Promise((resolve) => {
+            try{ TG.CloudStorage.getItem(key, (err, val) => resolve(err ? null : val)); }
+            catch(e){ resolve(null); }
+        });
+    }
+
+    // ============================================================
+    //  DOM রেফারেন্স
+    // ============================================================
+    const el = id => document.getElementById(id);
+    const chatArea = el('chatArea'), welc = el('welc'), msgC = el('msgC');
+    const msgIn = el('msgIn'), sendBtn = el('sendBtn'), stopBtn = el('stopBtn');
+    const chatList = el('chatList'), sb = el('sb'), sbOv = el('sbOv');
+    const settMod = el('settMod'), keyIn = el('keyIn'), modIn = el('modIn');
+    const mBadge = el('mBadge'), stDot = el('stDot'), apiWarn = el('apiWarn');
+    const thmIco = el('thmIco'), thmSw = el('thmSw'), thmLbl = el('thmLbl');
+    const profPanel = el('profPanel');
+
+    // ============================================================
+    //  সাজেশন কার্ড
+    // ============================================================
+    const suggestions = [
+        { icon:'bi-book', label:'সৃজনশীল লেখা', text:'বাংলায় একটি ছোট রহস্যময় গল্প লিখুন' },
+        { icon:'bi-code-slash', label:'কোডিং সাহায্য', text:'JavaScript দিয়ে একটি Todo App তৈরি করুন, HTML ও CSS সহ' },
+        { icon:'bi-lightbulb', label:'জ্ঞান অনুসন্ধান', text:'কৃত্রিম বুদ্ধিমত্তা কী এবং এটি কিভাবে কাজ করে?' },
+        { icon:'bi-clipboard2-data', label:'পরিকল্পনা', text:'মাসিক ১৫,০০০ টাকার একটি বাজেট পরিকল্পনা তৈরি করে দিন' }
+    ];
+
+    function renderSuggestions(){
+        const grid = el('suggestGrid');
+        grid.innerHTML = '';
+        suggestions.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sug-btn text-left p-4 rounded-2xl border transition-all active:scale-[.98] cursor-pointer';
+            btn.style.cssText = 'background:var(--card-a);border-color:var(--border)';
+            btn.innerHTML = `<div class="flex items-center gap-2 mb-2 text-sm font-medium" style="color:var(--accent)"><i class="bi ${s.icon} text-base"></i>${s.label}</div><p class="text-xs leading-relaxed" style="color:var(--muted)">${esc(s.text)}</p>`;
+            btn.addEventListener('click', () => { haptic('light'); sendMsg(s.text); });
+            btn.addEventListener('mouseenter', () => btn.style.borderColor = 'var(--border-l)');
+            btn.addEventListener('mouseleave', () => btn.style.borderColor = 'var(--border)');
+            grid.appendChild(btn);
+        });
+    }
+
+    // ============================================================
+    //  থিম ম্যানেজমেন্ট
+    // ============================================================
+    function setTheme(t, animate){
+        S.theme = t;
+        document.documentElement.setAttribute('data-theme', t);
+        thmIco.className = t === 'dark' ? 'bi bi-moon-fill text-base' : 'bi bi-sun-fill text-base';
+        if(t === 'dark') thmSw.classList.add('on'); else thmSw.classList.remove('on');
+        thmLbl.textContent = t === 'dark' ? 'ডার্ক মোড' : 'লাইট মোড';
+        try{ localStorage.setItem('hy3_t', t); }catch(e){}
+        syncTelegramColors();
+        S.mdCache.clear();
+        if(animate){
+            document.body.classList.add('thm-trans');
+            setTimeout(() => document.body.classList.remove('thm-trans'), 350);
+        }
+    }
+    function toggleTheme(){
+        haptic('light');
+        S.userThemeOverride = true;
+        try{ localStorage.setItem('hy3_to', '1'); }catch(e){}
+        setTheme(S.theme === 'dark' ? 'light' : 'dark', true);
+        const badge = document.getElementById('tgThemeBadge');
+        if(badge) badge.classList.add('hidden');
+    }
+
+    // ============================================================
+    //  ইউটিলিটি
+    // ============================================================
+    function esc(t){
+        if(t == null) return '';
+        const d = document.createElement('div');
+        d.textContent = String(t);
+        return d.innerHTML;
+    }
+    function fmtTime(ts){
+        if(!ts) return '';
+        try{ return new Date(ts).toLocaleTimeString('bn-BD',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+        catch(e){ return new Date(ts).toLocaleTimeString({hour:'2-digit',minute:'2-digit',hour12:true}); }
+    }
+    function fmtDate(ts){
+        if(!ts) return '—';
+        try{ return new Date(ts).toLocaleDateString('bn-BD',{year:'numeric',month:'short',day:'numeric'}); }
+        catch(e){ return new Date(ts).toLocaleDateString({year:'numeric',month:'short',day:'numeric'}); }
+    }
+
+    function scrollBot(){
+        if(!S.settings.autoScroll) return;
+        if(S.scrollRafId) return;
+        S.scrollRafId = requestAnimationFrame(() => {
+            S.scrollRafId = null;
+            chatArea.scrollTo({top:chatArea.scrollHeight, behavior:'smooth'});
+        });
+    }
+
+    function copyText(text, msg){
+        haptic('select');
+        if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(text)
+                .then(()=>toast(msg || 'কপি হয়েছে','bi-clipboard-check'))
+                .catch(()=>fbCopy(text, msg));
+        } else fbCopy(text, msg);
+    }
+    function fbCopy(text, msg){
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+        document.body.appendChild(ta);
+        ta.select();
+        try{
+            document.execCommand('copy');
+            toast(msg || 'কপি হয়েছে','bi-clipboard-check');
+        }catch(e){ toast('কপি করা যায়নি','bi-x-circle'); }
+        document.body.removeChild(ta);
+    }
+    function toast(msg, ico='bi-check-circle-fill'){
+        const c = el('toasts'), t = document.createElement('div');
+        t.className = 't-in pointer-events-auto text-sm px-4 py-2.5 rounded-xl border backdrop-blur-lg';
+        t.style.cssText = 'background:var(--surface);border-color:var(--border);color:var(--fg);box-shadow:0 8px 30px var(--shadow-lg)';
+        t.innerHTML = `<div class="flex items-center gap-2"><i class="bi ${ico} text-base" style="color:var(--accent)"></i><span>${esc(msg)}</span></div>`;
+        c.appendChild(t);
+        setTimeout(()=>{
+            t.classList.replace('t-in','t-out');
+            setTimeout(()=>t.remove(), 250);
+        }, 2200);
+    }
+
+    // ============================================================
+    //  মার্কডাউন পার্সার (উন্নত — কোড ব্লক ভাষা সহ, টেবিল সাপোর্ট)
+    // ============================================================
+    function md(text){
+        if(text == null) return '';
+        text = String(text);
+        const cacheKey = text + '|' + S.theme;
+        if(S.mdCache.has(cacheKey)) return S.mdCache.get(cacheKey);
+
+        const codeBlocks = [];
+        text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+            const langLabel = lang ? lang.toLowerCase() : 'code';
+            const iconMap = {
+                html:'bi-filetype-html', css:'bi-filetype-css', js:'bi-filetype-js',
+                javascript:'bi-filetype-js', json:'bi-filetype-json', py:'bi-filetype-py',
+                python:'bi-filetype-py', ts:'bi-filetype-tsx', typescript:'bi-filetype-tsx',
+                jsx:'bi-filetype-tsx', tsx:'bi-filetype-tsx', sql:'bi-database',
+                bash:'bi-terminal', sh:'bi-terminal', shell:'bi-terminal',
+                md:'bi-markdown', markdown:'bi-markdown', xml:'bi-filetype-xml',
+                yml:'bi-filetype-yml', yaml:'bi-filetype-yml', java:'bi-filetype-java',
+                c:'bi-filetype-c', cpp:'bi-filetype-cpp', cs:'bi-filetype-cs',
+                go:'bi-filetype-go', rs:'bi-filetype-rust', rust:'bi-filetype-rust',
+                php:'bi-filetype-php', rb:'bi-gem', ruby:'bi-gem', vue:'bi-filetype-vue'
+            };
+            const icon = iconMap[langLabel] || 'bi-code-slash';
+            const block = `<pre><div class="code-head"><span class="code-lang"><i class="bi ${icon}"></i>${esc(langLabel)}</span><button type="button" class="code-copy" data-code="${encodeURIComponent(code.trim())}"><i class="bi bi-clipboard"></i> কপি</button></div><code>${esc(code.trim())}</code></pre>`;
+            codeBlocks.push(block);
+            return `%%CODEBLOCK_${codeBlocks.length - 1}%%`;
+        });
+
+        const inlines = [];
+        text = text.replace(/`([^`\n]+)`/g, (_, c) => {
+            inlines.push('<code>' + esc(c) + '</code>');
+            return `%%INLINE_${inlines.length - 1}%%`;
+        });
+
+        text = text.replace(/^>\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+        text = text.replace(/^#### (.+)$/gm, '<h3>$1</h3>');
+        text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        text = text.replace(/^---+$/gm, '<hr>');
+
+        // টেবিল পার্স
+        text = text.replace(/((?:^\|.*\|\s*\n)+)/gm, (table) => {
+            const rows = table.trim().split('\n').filter(r => r.trim());
+            if(rows.length < 2) return table;
+            if(!/^\|[\s\-:|]+\|$/.test(rows[1].trim())) return table;
+            const parseRow = (r) => r.trim().slice(1,-1).split('|').map(c => c.trim());
+            const header = parseRow(rows[0]);
+            const body = rows.slice(2).map(parseRow);
+            let html = '<table><thead><tr>';
+            header.forEach(h => html += `<th>${esc(h)}</th>`);
+            html += '</tr></thead><tbody>';
+            body.forEach(row => {
+                html += '<tr>';
+                row.forEach(c => html += `<td>${esc(c)}</td>`);
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            return html;
+        });
+
+        text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
+        text = text.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+        text = text.replace(/(?:^[\-\*] .+\n?)+/gm, (block) => {
+            const items = block.trim().split('\n').map(l => '<li>' + l.replace(/^[\-\*] /, '') + '</li>').join('');
+            return '<ul>' + items + '</ul>';
+        });
+        text = text.replace(/(?:^\d+\. .+\n?)+/gm, (block) => {
+            const items = block.trim().split('\n').map(l => '<li>' + l.replace(/^\d+\. /, '') + '</li>').join('');
+            return '<ol>' + items + '</ol>';
+        });
+
+        text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+        text = text.replace(/\n/g, '<br>');
+        text = text.replace(/<\/(h[1-3]|ul|ol|pre|blockquote|table|hr)><br>/g, '</$1>');
+        text = text.replace(/<br><(h[1-3]|ul|ol|pre|blockquote|table|hr)>/g, '<$1>');
+        text = text.replace(/<tr><br>/g, '<tr>');
+        text = text.replace(/<br><\/tr>/g, '</tr>');
+
+        codeBlocks.forEach((block, i) => { text = text.replace(`%%CODEBLOCK_${i}%%`, block); });
+        inlines.forEach((code, i) => { text = text.replace(`%%INLINE_${i}%%`, code); });
+
+        if(S.mdCache.size > 500) S.mdCache.clear();
+        S.mdCache.set(cacheKey, text);
+        return text;
+    }
+
+    // কোড ব্লক কপি বাটন হ্যান্ডলার (ইভেন্ট ডেলিগেশন)
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.code-copy');
+        if(!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const code = decodeURIComponent(btn.dataset.code || '');
+        if(!code) return;
+        haptic('select');
+        const original = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="bi bi-check2"></i> কপি হয়েছে';
+        if(navigator.clipboard && navigator.clipboard.writeText){
+            navigator.clipboard.writeText(code).catch(()=>fbCopy(code));
+        } else fbCopy(code);
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = original;
+        }, 1500);
+    });
+
+    // ============================================================
+    //  সাইডবার
+    // ============================================================
+    function openSb(){
+        haptic('light');
+        sb.classList.remove('-translate-x-full');
+        sbOv.classList.remove('hidden');
+        document.body.classList.add('sb-open');
+        updateBackButton();
+    }
+    function closeSb(){
+        sb.classList.add('-translate-x-full');
+        sbOv.classList.add('hidden');
+        document.body.classList.remove('sb-open');
+        updateBackButton();
+    }
+    function toggleSb(){ sb.classList.contains('-translate-x-full') ? openSb() : closeSb(); }
+
+    // ============================================================
+    //  প্রোফাইল প্যানেল
+    // ============================================================
+    function openProfile(){
+        haptic('light');
+        closeSb();
+        renderProfile();
+        profPanel.classList.add('open');
+        S.view = 'profile';
+        updateBackButton();
+    }
+    function closeProfile(){
+        profPanel.classList.remove('open');
+        S.view = 'chat';
+        updateBackButton();
+    }
+
+    function getInitials(user){
+        if(!user) return '?';
+        const f = user.first_name || '';
+        const l = user.last_name || '';
+        if(f && l) return (f[0] + l[0]).toUpperCase();
+        if(f) return f[0].toUpperCase();
+        if(user.username) return user.username[0].toUpperCase();
+        return '?';
+    }
+    function getFullname(user){
+        if(!user) return 'অতিথি';
+        const f = user.first_name || '';
+        const l = user.last_name || '';
+        return (f + ' ' + l).trim() || user.username || 'অতিথি';
+    }
+
+    function setAvatar(elem, user){
+        if(!elem) return;
+        elem.innerHTML = '';
+        if(user && user.photo_url){
+            const img = document.createElement('img');
+            img.src = user.photo_url;
+            img.alt = 'avatar';
+            img.referrerPolicy = 'no-referrer';
+            img.onerror = () => {
+                elem.innerHTML = '';
+                elem.textContent = getInitials(user);
+            };
+            elem.appendChild(img);
+        } else {
+            elem.textContent = getInitials(user);
+        }
+    }
+
+    function renderProfile(){
+        const u = S.user;
+        setAvatar(el('profAvatarSmall'), u);
+        setAvatar(el('profAvatarLarge'), u);
+        el('profName').textContent = getFullname(u);
+        el('profUsername').textContent = u && u.username ? '@' + u.username : (u ? 'ইউজারনেম নেই' : 'টেলিগ্রামে লগইন করা নেই');
+        el('profId').textContent = u ? u.id : '—';
+        el('profLang').textContent = u && u.language_code ? u.language_code.toUpperCase() : '—';
+        el('profHandle').textContent = u && u.username ? '@' + u.username : '—';
+        el('profSince').textContent = u ? fmtDate(u.since) : '—';
+        el('profBio').textContent = S.bio || 'কোনো বায়ো যুক্ত করা হয়নি।';
+        el('profBio').style.color = S.bio ? 'var(--fg2)' : 'var(--muted)';
+        el('profPremium').classList.toggle('hidden', !(u && u.is_premium));
+
+        const totalChats = S.convs.length;
+        let totalMsgs = 0, totalChars = 0;
+        S.convs.forEach(c => {
+            if(c.messages){
+                totalMsgs += c.messages.length;
+                c.messages.forEach(m => { totalChars += (m.content || '').length; });
+            }
+        });
+        el('statChats').textContent = totalChats.toLocaleString('bn-BD');
+        el('statMsgs').textContent = totalMsgs.toLocaleString('bn-BD');
+        el('statTokens').textContent = totalChars.toLocaleString('bn-BD');
+
+        if(u && u.first_name) el('welcName').textContent = 'স্বাগতম, ' + u.first_name;
+    }
+
+    // ============================================================
+    //  চ্যাট লিস্ট
+    // ============================================================
+    function renderList(){
+        chatList.innerHTML = '';
+        const q = (el('chatSearchIn').value || '').trim().toLowerCase();
+        const filtered = q ? S.convs.filter(c => (c.title || '').toLowerCase().includes(q)) : S.convs.slice();
+        // পিন করা চ্যাটগুলো উপরে থাকবে (পিন টাইম অনুসারে), তারপর বাকিগুলো সাম্প্রতিক ক্রমে
+        filtered.sort((a, b) => {
+            const ap = a.pinned ? 1 : 0;
+            const bp = b.pinned ? 1 : 0;
+            if(ap !== bp) return bp - ap;
+            if(ap && bp) return (b.pinTs || 0) - (a.pinTs || 0);
+            return (b.ts || 0) - (a.ts || 0);
+        });
+        if(!filtered.length){
+            chatList.innerHTML = `<p class="text-center text-xs py-10" style="color:var(--muted);opacity:.45">${q ? 'কোনো চ্যাট পাওয়া যায়নি' : 'কোনো চ্যাট নেই'}</p>`;
+            return;
+        }
+        filtered.forEach(c => {
+            const active = c.id === S.curId;
+            // FIX: আগে একটি <button>-এর ভেতরে আরেকটি <button> ছিল (invalid HTML).
+            // এখন বাইরেরটি <div role="button"> — ভেতরের মেনু বাটনের ক্লিক ঠিকভাবে কাজ করবে।
+            const row = document.createElement('div');
+            row.className = 'w-full text-left px-3 py-2.5 rounded-xl text-[13px] flex items-center gap-2 group cursor-pointer select-none';
+            row.style.cssText = active
+                ? `background:var(--accent-glow);color:var(--accent);border:1px solid rgba(16,185,129,.18)`
+                : `background:transparent;color:var(--muted-l);border:1px solid transparent`;
+            row.setAttribute('role', 'button');
+            row.setAttribute('tabindex', '0');
+            row.dataset.convId = c.id;
+
+            const icon = `<i class="bi bi-chat-left-text flex-shrink-0 text-xs" style="color:${active?'var(--accent)':'var(--muted)'}"></i>`;
+            const pinIcon = c.pinned ? `<i class="bi bi-pin-angle-fill flex-shrink-0 text-[10px]" style="color:${active?'var(--accent)':'var(--muted)'};opacity:.8"></i>` : '';
+            const title = `<span class="flex-1 truncate">${esc(c.title)}</span>`;
+            // FIX: ভেতরের এলিমেন্ট এখন <span role="button"> — কোনো nested <button> নেই।
+            const menu = `<span class="cls-menu flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md opacity-60 transition-all cursor-pointer" style="background:transparent;color:var(--muted)" role="button" aria-label="অপশন"><i class="bi bi-three-dots-vertical text-xs"></i></span>`;
+            row.innerHTML = icon + pinIcon + title + menu;
+
+            if(!active){
+                row.addEventListener('mouseenter', () => { if(c.id !== S.curId) row.style.background = 'var(--card)'; });
+                row.addEventListener('mouseleave', () => { if(c.id !== S.curId) row.style.background = 'transparent'; });
+            }
+            // পুরো রো-তে ক্লিক করলে চ্যাট লোড হবে — কিন্তু মেনু বাটনে ক্লিক হলে নয়।
+            row.addEventListener('click', (e) => {
+                if(e.target.closest('.cls-menu')) return;
+                haptic('light');
+                loadConv(c.id);
+            });
+            // কীবোর্ড সাপোর্ট
+            row.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter' || e.key === ' '){
+                    e.preventDefault();
+                    if(e.target.closest('.cls-menu')){ showChatMenu(c, menuBtn); }
+                    else { loadConv(c.id); }
+                }
+            });
+
+            const menuBtn = row.querySelector('.cls-menu');
+            menuBtn.addEventListener('mouseenter', function(){ this.style.color='var(--fg)'; this.style.background='var(--card-h)'; });
+            menuBtn.addEventListener('mouseleave', function(){ this.style.color='var(--muted)'; this.style.background='transparent'; });
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                haptic('light');
+                showChatMenu(c, menuBtn);
+            });
+            // Long-press সাপোর্ট: মোবাইলে চ্যাট আইটেমে দীর্ঘক্ষণ চাপলে মেনু খুলবে
+            let lpTimer = null;
+            let lpFired = false;
+            const startLP = (e) => {
+                lpFired = false;
+                lpTimer = setTimeout(() => {
+                    lpFired = true;
+                    haptic('medium');
+                    showChatMenu(c, menuBtn);
+                }, 550);
+            };
+            const cancelLP = () => { if(lpTimer){ clearTimeout(lpTimer); lpTimer = null; } };
+            row.addEventListener('touchstart', startLP, { passive: true });
+            row.addEventListener('touchend', cancelLP);
+            row.addEventListener('touchmove', cancelLP);
+            row.addEventListener('touchcancel', cancelLP);
+            // row-এর ক্লিক long-press এর পরে ফায়ার না করতে চাইলে এখানে চেক করুন
+            row.addEventListener('click', (e) => {
+                if(lpFired){ lpFired = false; e.preventDefault(); e.stopPropagation(); }
+            }, true);
+            chatList.appendChild(row);
+        });
+    }
+
+    // চ্যাট কনটেক্সট মেনু
+    // FIX: আগে TG.showPopup দিয়ে ৫টি বাটন দেখানো হতো, কিন্তু Telegram showPopup সর্বোচ্চ ৩টি বাটন সাপোর্ট করে।
+    //      ফলে popup টি কখনো দেখাতো না এবং delete অপশনে পৌঁছানো যেত না।
+    //      এখন সবসময় showCustomMenu ব্যবহার করা হচ্ছে — যা আইকন সহ একটি সুন্দর ড্রপডাউন দেখায়।
+    function showChatMenu(conv, anchor){
+        const actions = [
+            { id:'rename', label:'রিনেম', icon:'bi-pencil' },
+            { id:'export', label:'এক্সপোর্ট (JSON)', icon:'bi-filetype-json' },
+            { id:'exportTxt', label:'এক্সপোর্ট (TXT)', icon:'bi-filetype-txt' },
+            { id:'pin', label: (conv.pinned ? 'আনপিন করুন' : 'পিন করুন'), icon:(conv.pinned ? 'bi-pin-angle-fill' : 'bi-pin-angle') },
+            { id:'delete', label:'মুছুন', icon:'bi-trash3', danger:true }
+        ];
+        showCustomMenu(actions, anchor, (action) => {
+            if(action === 'rename') promptRename(conv);
+            else if(action === 'export') exportChat(conv);
+            else if(action === 'exportTxt') exportAsText(conv);
+            else if(action === 'pin') togglePin(conv);
+            else if(action === 'delete') confirmDelete(conv.id, conv.title);
+        });
+    }
+
+    // পিন টগল করার ফাংশন
+    function togglePin(conv){
+        conv.pinned = !conv.pinned;
+        conv.pinTs = conv.pinned ? Date.now() : 0;
+        saveConvs();
+        renderList();
+        toast(conv.pinned ? 'চ্যাট পিন করা হয়েছে' : 'চ্যাট আনপিন করা হয়েছে', conv.pinned ? 'bi-pin-angle-fill' : 'bi-pin-angle');
+    }
+
+    function showCustomMenu(actions, anchor, callback){
+        const existing = document.getElementById('ctxMenu');
+        if(existing) existing.remove();
+        const existingBd = document.getElementById('ctxMenuBd');
+        if(existingBd) existingBd.remove();
+
+        // একটি transparent backdrop তৈরি করি যাতে বাইরে ট্যাপ করলে মেনু বন্ধ হয়
+        const backdrop = document.createElement('div');
+        backdrop.id = 'ctxMenuBd';
+        backdrop.style.cssText = 'position:fixed;inset:0;z-index:79;background:transparent';
+        document.body.appendChild(backdrop);
+
+        const menu = document.createElement('div');
+        menu.id = 'ctxMenu';
+        menu.className = 'fixed z-[80] rounded-xl border py-1 msg-in';
+        menu.style.cssText = 'background:var(--surface);border-color:var(--border);box-shadow:0 8px 30px var(--shadow-lg);min-width:200px;max-width:280px';
+        actions.forEach(a => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'w-full text-left px-3 py-2.5 text-sm flex items-center gap-2.5 cursor-pointer transition-colors';
+            item.style.color = a.danger ? 'var(--danger)' : 'var(--fg)';
+            item.innerHTML = `<i class="bi ${a.icon} text-xs" style="width:14px;text-align:center"></i> <span>${a.label}</span>`;
+            item.addEventListener('mouseenter', function(){ this.style.background = 'var(--card-h)'; });
+            item.addEventListener('mouseleave', function(){ this.style.background = 'transparent'; });
+            // উভয় touchstart ও click শুনি — মোবাইলে দ্রুত রেসপন্স পেতে
+            const handleSelect = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                haptic('light');
+                callback(a.id);
+                closeMenu();
+            };
+            item.addEventListener('click', handleSelect);
+            menu.appendChild(item);
+        });
+        document.body.appendChild(menu);
+
+        const closeMenu = () => {
+            if(menu.parentNode) menu.remove();
+            if(backdrop.parentNode) backdrop.remove();
+        };
+
+        // backdrop এ ক্লিক/টাচ হলে মেনু বন্ধ
+        const closeOnOutside = (e) => { closeMenu(); };
+        backdrop.addEventListener('click', closeOnOutside);
+        backdrop.addEventListener('touchstart', closeOnOutside, { passive: true });
+
+        // পজিশন ক্যালকুলেশন
+        const rect = anchor.getBoundingClientRect();
+        const menuW = menu.offsetWidth;
+        const menuH = menu.offsetHeight;
+        let left = rect.right - menuW;
+        let top = rect.bottom + 4;
+        if(top + menuH > window.innerHeight - 20) top = rect.top - menuH - 4;
+        if(left < 10) left = 10;
+        if(left + menuW > window.innerWidth - 10) left = window.innerWidth - menuW - 10;
+        if(top < 10) top = 10;
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+    }
+
+    function promptRename(conv){
+        try{
+            const result = window.prompt('নতুন নাম দিন:', conv.title);
+            if(result && result.trim()){
+                conv.title = result.trim().slice(0, 80);
+                saveConvs();
+                renderList();
+                toast('নাম পরিবর্তন হয়েছে', 'bi-pencil');
+            }
+        }catch(e){
+            toast('পরিবর্তন করা যায়নি', 'bi-x-circle');
+        }
+    }
+
+    function confirmDelete(id, title){
+        const doDelete = () => {
+            S.convs = S.convs.filter(c => c.id !== id);
+            saveConvs();
+            if(S.curId === id) newChat();
+            else renderList();
+            renderProfile();
+            toast('চ্যাট মুছে ফেলা হয়েছে','bi-trash3');
+        };
+        if(TG && TG.showConfirm){
+            TG.showConfirm('"' + (title || 'চ্যাট') + '" মুছে ফেলতে চান?', (ok) => { if(ok){ haptic('warning'); doDelete(); } });
+        } else {
+            if(confirm('"' + (title || 'চ্যাট') + '" মুছে ফেলতে চান?')){ haptic('warning'); doDelete(); }
+        }
+    }
+
+    // ============================================================
+    //  কনভারসেশন ম্যানেজমেন্ট
+    // ============================================================
+    function createConv(text){
+        const id = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+        S.convs.unshift({ id, title: text.slice(0,45) + (text.length>45?'...':''), messages: [], ts: Date.now() });
+        S.curId = id;
+        S.msgs = [];
+        saveConvs();
+        renderList();
+    }
+    function updateConv(){
+        if(!S.curId) return;
+        const c = S.convs.find(x => x.id === S.curId);
+        if(!c) return;
+        c.messages = S.msgs.map(m => ({role:m.role, content:m.content, ts:m.ts}));
+        const first = c.messages.find(m => m.role === 'user');
+        if(first) c.title = first.content.slice(0,45) + (first.content.length>45?'...':'');
+        c.ts = Date.now();
+        saveConvs();
+        renderList();
+        renderProfile();
+    }
+    function loadConv(id){
+        const c = S.convs.find(x => x.id === id);
+        if(!c) return;
+        S.curId = id;
+        S.msgs = c.messages.map(m => ({...m}));
+        msgC.innerHTML = '';
+        if(!S.msgs.length){
+            welc.classList.remove('hidden');
+            msgC.classList.add('hidden');
+        } else {
+            welc.classList.add('hidden');
+            msgC.classList.remove('hidden');
+            S.msgs.forEach((m, i) => addMsgBubble(m, i));
+            requestAnimationFrame(() => { chatArea.scrollTop = chatArea.scrollHeight; });
+        }
+        closeSb();
+        renderList();
+    }
+    function newChat(){
+        haptic('light');
+        S.curId = null;
+        S.msgs = [];
+        msgC.innerHTML = '';
+        welc.classList.remove('hidden');
+        msgC.classList.add('hidden');
+        closeSb();
+        renderList();
+        msgIn.focus();
+    }
+    function clearAll(){
+        if(!S.convs.length){ toast('মুছার মতো চ্যাট নেই','bi-info-circle'); return; }
+        const doClear = () => {
+            S.convs = [];
+            saveConvs();
+            newChat();
+            renderProfile();
+            toast('সব চ্যাট মুছে ফেলা হয়েছে','bi-trash3');
+        };
+        if(TG && TG.showConfirm){
+            TG.showConfirm('সকল চ্যাট মুছে ফেলতে চান? এটি ফিরিয়ে আনা যাবে না।', (ok) => { if(ok){ haptic('warning'); doClear(); } });
+        } else {
+            if(confirm('সকল চ্যাট মুছে ফেলতে চান? এটি ফিরিয়ে আনা যাবে না।')) doClear();
+        }
+    }
+
+    // ============================================================
+    //  মেসেজ রেন্ডার + অ্যাকশন বার
+    // ============================================================
+    function addMsgBubble(m, index){
+        const div = document.createElement('div');
+        div.className = `flex ${m.role==='user'?'justify-end':'justify-start'} msg-in`;
+        div.dataset.msgIndex = index;
+        div.dataset.msgRole = m.role;
+        const isU = m.role === 'user';
+        const bgStyle = isU
+            ? `background:linear-gradient(135deg,var(--accent),var(--accent-d));color:#fff`
+            : `background:var(--card-a);border:1px solid var(--border)`;
+        const radius = isU ? 'border-radius:16px 16px 4px 16px' : 'border-radius:16px 16px 16px 4px';
+        const timeC = isU ? 'rgba(255,255,255,.7)' : 'var(--muted)';
+
+        div.innerHTML = `
+            <div class="msg-bubble group relative max-w-[88%] sm:max-w-[78%] px-3.5 py-2.5 sm:px-4 sm:py-3" style="${bgStyle};${radius};box-shadow:0 2px 12px var(--shadow)">
+                <div class="mc text-[13.5px] sm:text-sm leading-relaxed">${isU ? esc(m.content) : md(m.content)}</div>
+                <div class="flex items-center justify-between mt-1.5 gap-2">
+                    <span class="text-[10px]" style="color:${timeC}">${fmtTime(m.ts)}</span>
+                    <div class="msg-actions">
+                        <button type="button" class="msg-act-btn cp-btn" title="কপি">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                        ${isU ? `
+                            <button type="button" class="msg-act-btn edit-btn" title="সম্পাদনা">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="msg-act-btn resend-btn" title="পুনরায় পাঠান">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        ` : `
+                            <button type="button" class="msg-act-btn speak-btn" title="শোনান">
+                                <i class="bi bi-volume-up"></i>
+                            </button>
+                            <button type="button" class="msg-act-btn regen-btn" title="পুনরায় তৈরি">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const cpBtn = div.querySelector('.cp-btn');
+        cpBtn.addEventListener('click', () => copyText(m.content));
+
+        if(isU){
+            div.querySelector('.edit-btn').addEventListener('click', () => openEdit(index));
+            div.querySelector('.resend-btn').addEventListener('click', () => resendMessage(index));
+        } else {
+            div.querySelector('.speak-btn').addEventListener('click', (e) => toggleSpeak(m.content, e.currentTarget));
+            div.querySelector('.regen-btn').addEventListener('click', () => regenerateMessage(index));
+        }
+
+        msgC.appendChild(div);
+        scrollBot();
+        return div;
+    }
+
+    // ============================================================
+    //  টাইপিং ইন্ডিকেটর
+    // ============================================================
+    function showTyping(){
+        const div = document.createElement('div');
+        div.id = 'typInd';
+        div.className = 'flex justify-start msg-in';
+        div.innerHTML = `<div class="px-5 py-4 flex items-center gap-2 border" style="background:var(--card-a);border-color:var(--border);border-radius:16px 16px 16px 4px;box-shadow:0 2px 12px var(--shadow)"><div class="w-2 h-2 rounded-full d1" style="background:var(--typing-bg)"></div><div class="w-2 h-2 rounded-full d2" style="background:var(--typing-bg)"></div><div class="w-2 h-2 rounded-full d3" style="background:var(--typing-bg)"></div></div>`;
+        msgC.appendChild(div);
+        scrollBot();
+    }
+    function hideTyping(){ const e = el('typInd'); if(e) e.remove(); }
+
+    // ============================================================
+    //  স্ট্রিমিং বাবল
+    // ============================================================
+    function createStreamBubble(){
+        const div = document.createElement('div');
+        div.className = 'flex justify-start msg-in';
+        div.innerHTML = `
+            <div class="msg-bubble group relative max-w-[88%] sm:max-w-[78%] px-3.5 py-2.5 sm:px-4 sm:py-3 border" style="background:var(--card-a);border-color:var(--border);border-radius:16px 16px 16px 4px;box-shadow:0 2px 12px var(--shadow)">
+                <div class="mc text-[13.5px] sm:text-sm leading-relaxed" style="color:var(--fg)"></div>
+                <div class="flex items-center justify-between mt-1.5 gap-2">
+                    <span class="ts text-[10px]" style="color:var(--muted)"></span>
+                    <div class="msg-actions" style="opacity:.7">
+                        <button type="button" class="msg-act-btn cp-btn-stream" title="কপি">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        msgC.appendChild(div);
+
+        const mc = div.querySelector('.mc');
+        const ts = div.querySelector('.ts');
+        const cpBtn = div.querySelector('.cp-btn-stream');
+        let content = '';
+        let lastRenderLen = 0;
+
+        cpBtn.addEventListener('click', () => { if(content) copyText(content); });
+
+        let rafId = null;
+        const scheduleRender = () => {
+            if(rafId) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                if(content.length !== lastRenderLen){
+                    mc.innerHTML = md(content);
+                    lastRenderLen = content.length;
+                    scrollBot();
+                }
+            });
+        };
+
+        const api = {
+            el: div,
+            append(chunk){ content += chunk; scheduleRender(); },
+            finalize(){
+                if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+                mc.innerHTML = md(content);
+                const t = Date.now();
+                ts.textContent = fmtTime(t);
+
+                const actionsBar = div.querySelector('.msg-actions');
+                actionsBar.style.opacity = '';
+                actionsBar.innerHTML = `
+                    <button type="button" class="msg-act-btn cp-btn-final" title="কপি">
+                        <i class="bi bi-copy"></i>
+                    </button>
+                    <button type="button" class="msg-act-btn speak-btn-final" title="শোনান">
+                        <i class="bi bi-volume-up"></i>
+                    </button>
+                    <button type="button" class="msg-act-btn regen-btn-final" title="পুনরায় তৈরি">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                `;
+                div.querySelector('.cp-btn-final').addEventListener('click', () => copyText(content));
+                div.querySelector('.speak-btn-final').addEventListener('click', (e) => toggleSpeak(content, e.currentTarget));
+                div.querySelector('.regen-btn-final').addEventListener('click', () => regenerateMessage(S.msgs.length));
+
+                return { role:'assistant', content, ts: t };
+            },
+            getContent(){ return content; }
+        };
+
+        S.currentStreamBubble = api;
+        return api;
+    }
+
+    // ============================================================
+    //  মেসেজ পাঠানো
+    // ============================================================
+    function sendMsg(text){
+        if(!text || S.generating) return;
+        haptic('light');
+        if(!S.curId) createConv(text);
+        const msg = { role:'user', content:text, ts:Date.now() };
+        S.msgs.push(msg);
+        addMsgBubble(msg, S.msgs.length - 1);
+        welc.classList.add('hidden');
+        msgC.classList.remove('hidden');
+        getResponse();
+    }
+
+    // ============================================================
+    //  UI স্টেট
+    // ============================================================
+    function setUI(gen){
+        S.generating = gen;
+        if(gen){
+            sendBtn.style.display = 'none';
+            stopBtn.style.display = 'flex';
+            stDot.style.background = 'var(--warning)';
+            stDot.style.opacity = '1';
+            stDot.classList.add('animate-pulse');
+            msgIn.placeholder = 'প্রতিক্রিয়া তৈরি হচ্ছে...';
+            if(TG && TG.MainButton){
+                try{
+                    TG.MainButton.setText('থামান');
+                    TG.MainButton.color = '#ef4444';
+                    TG.MainButton.textColor = '#ffffff';
+                    TG.MainButton.show();
+                }catch(e){}
+            }
+        } else {
+            sendBtn.style.display = 'flex';
+            stopBtn.style.display = 'none';
+            stDot.style.background = 'var(--accent)';
+            stDot.style.opacity = '.4';
+            stDot.classList.remove('animate-pulse');
+            msgIn.placeholder = 'আপনার বার্তা লিখুন...';
+            sendBtn.disabled = !msgIn.value.trim();
+            msgIn.focus();
+            if(TG && TG.MainButton){ try{ TG.MainButton.hide(); }catch(e){} }
+        }
+    }
+
+    // ============================================================
+    //  API কল
+    // ============================================================
+    async function getResponse(){
+        S.abort = new AbortController();
+        setUI(true);
+        showTyping();
+
+        if(!S.apiKey){
+            hideTyping();
+            setUI(false);
+            const w = 'অনুগ্রহ করে সেটিংসে আপনার **OpenRouter API Key** সেট করুন। এটি সম্পূর্ণ ফ্রি।\n\n১. openrouter.ai এ যান\n২. ফ্রি অ্যাকাউন্ট তৈরি করুন\n৩. Keys পেজ থেকে নতুন Key তৈরি করুন\n৪. সেটিংসে পেস্ট করুন';
+            const m = { role:'assistant', content:w, ts:Date.now() };
+            S.msgs.push(m);
+            addMsgBubble(m, S.msgs.length - 1);
+            updateConv();
+            return;
+        }
+
+        let streamBubble = null;
+
+        try {
+            const apiMessages = [];
+            if(S.settings.systemPrompt.trim()){
+                apiMessages.push({ role:'system', content: S.settings.systemPrompt.trim() });
+            }
+            S.msgs.forEach(m => apiMessages.push({role:m.role, content:m.content}));
+
+            const reqBody = {
+                model: S.model,
+                messages: apiMessages,
+                max_tokens: 4096,
+                temperature: S.settings.temperature
+            };
+            if(S.settings.stream) reqBody.stream = true;
+
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type':'application/json',
+                    'Authorization':`Bearer ${S.apiKey}`,
+                    'HTTP-Referer': location.href,
+                    'X-Title':'HY3 ChatBot Telegram Mini App'
+                },
+                body: JSON.stringify(reqBody),
+                signal: S.abort.signal
+            });
+
+            hideTyping();
+
+            if(!res.ok){
+                let err = `HTTP ${res.status}`;
+                let errBn = '';
+                try{
+                    const d = await res.json();
+                    err = d.error?.message || err;
+                    if(res.status === 401) errBn = 'API Key সঠিক নয়। সেটিংসে যাচাই করুন।';
+                    else if(res.status === 402) errBn = 'অ্যাকাউন্টে পর্যাপ্ত ক্রেডিট নেই।';
+                    else if(res.status === 429) errBn = 'অনেক বেশি অনুরোধ। কিছুক্ষণ পর চেষ্টা করুন।';
+                    else if(res.status >= 500) errBn = 'সার্ভারে সমস্যা। কিছুক্ষণ পর চেষ্টা করুন।';
+                }catch(e){}
+                const m = { role:'assistant', content:`**ত্রুটি:** ${errBn || err}`, ts:Date.now() };
+                S.msgs.push(m);
+                addMsgBubble(m, S.msgs.length - 1);
+                setUI(false);
+                updateConv();
+                haptic('error');
+                return;
+            }
+
+            if(S.settings.stream && res.body){
+                streamBubble = createStreamBubble();
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buf = '';
+                while(true){
+                    const {done, value} = await reader.read();
+                    if(done) break;
+                    buf += decoder.decode(value, {stream:true});
+                    const lines = buf.split('\n');
+                    buf = lines.pop() || '';
+                    for(const line of lines){
+                        const tr = line.trim();
+                        if(!tr.startsWith('data: ')) continue;
+                        const data = tr.slice(6);
+                        if(data === '[DONE]') continue;
+                        try{
+                            const p = JSON.parse(data);
+                            const delta = (p.choices && p.choices[0] && p.choices[0].delta && p.choices[0].delta.content) || '';
+                            if(delta) streamBubble.append(delta);
+                        }catch(e){}
+                    }
+                }
+                const finalMsg = streamBubble.finalize();
+                S.msgs.push(finalMsg);
+                S.currentStreamBubble = null;
+                haptic('success');
+            } else {
+                const data = await res.json();
+                const content = data.choices?.[0]?.message?.content || '(খালি উত্তর)';
+                streamBubble = createStreamBubble();
+                streamBubble.append(content);
+                const finalMsg = streamBubble.finalize();
+                S.msgs.push(finalMsg);
+                S.currentStreamBubble = null;
+                haptic('success');
+            }
+
+        } catch(err){
+            hideTyping();
+            if(err.name === 'AbortError'){
+                if(streamBubble && streamBubble.getContent()){
+                    const partial = streamBubble.getContent() + '\n\n*[প্রজন্ম থামানো হয়েছে]*';
+                    streamBubble.el.querySelector('.mc').innerHTML = md(partial);
+                    const t = Date.now();
+                    streamBubble.el.querySelector('.ts').textContent = fmtTime(t);
+                    S.msgs.push({ role:'assistant', content:partial, ts:t });
+                }
+            } else if(err.message && err.message.includes('Failed to fetch')){
+                const m = { role:'assistant', content:'**সংযোগে সমস্যা:** ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।', ts:Date.now() };
+                S.msgs.push(m);
+                addMsgBubble(m, S.msgs.length - 1);
+                haptic('error');
+            } else {
+                const m = { role:'assistant', content:`**ত্রুটি:** ${esc(err.message || 'অজানা সমস্যা হয়েছে')}`, ts:Date.now() };
+                S.msgs.push(m);
+                addMsgBubble(m, S.msgs.length - 1);
+                haptic('error');
+            }
+        }
+
+        S.abort = null;
+        S.currentStreamBubble = null;
+        setUI(false);
+        updateConv();
+    }
+
+    function stopGen(){
+        haptic('medium');
+        if(S.abort) S.abort.abort();
+    }
+
+    // ============================================================
+    //  রিজেনারেট, এডিট, রিসেন্ড
+    // ============================================================
+    function regenerateMessage(index){
+        if(S.generating) return;
+        if(index < 0 || index > S.msgs.length) return;
+        haptic('light');
+        S.msgs = S.msgs.slice(0, index);
+        msgC.innerHTML = '';
+        if(S.msgs.length){
+            S.msgs.forEach((m, i) => addMsgBubble(m, i));
+        } else {
+            welc.classList.remove('hidden');
+            msgC.classList.add('hidden');
+            return;
+        }
+        getResponse();
+    }
+
+    function resendMessage(index){
+        if(S.generating) return;
+        if(index < 0 || index >= S.msgs.length) return;
+        haptic('light');
+        S.msgs = S.msgs.slice(0, index + 1);
+        msgC.innerHTML = '';
+        S.msgs.forEach((m, i) => addMsgBubble(m, i));
+        getResponse();
+    }
+
+    function openEdit(index){
+        if(S.generating) return;
+        if(index < 0 || index >= S.msgs.length) return;
+        if(S.msgs[index].role !== 'user') return;
+        haptic('light');
+        S.editingMsgIndex = index;
+        el('editIn').value = S.msgs[index].content;
+        el('editMod').classList.remove('hidden');
+        el('editMod').classList.add('flex');
+        updateBackButton();
+        setTimeout(() => el('editIn').focus(), 100);
+    }
+    function closeEdit(){
+        el('editMod').classList.add('hidden');
+        el('editMod').classList.remove('flex');
+        S.editingMsgIndex = -1;
+        updateBackButton();
+    }
+    function saveEdit(){
+        const newText = el('editIn').value.trim();
+        if(!newText || S.editingMsgIndex < 0){ closeEdit(); return; }
+        haptic('success');
+        const idx = S.editingMsgIndex;
+        S.msgs[idx].content = newText;
+        S.msgs[idx].ts = Date.now();
+        S.msgs = S.msgs.slice(0, idx + 1);
+        closeEdit();
+        msgC.innerHTML = '';
+        S.msgs.forEach((m, i) => addMsgBubble(m, i));
+        getResponse();
+    }
+
+    // ============================================================
+    //  টেক্সট-টু-স্পিচ
+    // ============================================================
+    function toggleSpeak(text, btn){
+        if(!('speechSynthesis' in window)){
+            toast('এই ডিভাইসে সাপোর্টেড নয়','bi-volume-mute');
+            return;
+        }
+        if(S.isSpeaking){
+            window.speechSynthesis.cancel();
+            S.isSpeaking = false;
+            document.querySelectorAll('.speak-btn, .speak-btn-final').forEach(b => {
+                b.innerHTML = '<i class="bi bi-volume-up"></i>';
+                b.classList.remove('active');
+            });
+            return;
+        }
+        haptic('light');
+        const cleanText = text
+            .replace(/```[\s\S]*?```/g, ' কোড ব্লক ')
+            .replace(/`([^`]+)`/g, '$1')
+            .replace(/[#*_>\-\[\]\(\)]/g, '')
+            .replace(/\n+/g, '. ')
+            .trim();
+        const utter = new SpeechSynthesisUtterance(cleanText);
+        utter.lang = 'bn-IN';
+        utter.rate = 0.95;
+        utter.pitch = 1;
+        const voices = window.speechSynthesis.getVoices();
+        const bnVoice = voices.find(v => v.lang.startsWith('bn'));
+        if(bnVoice) utter.voice = bnVoice;
+        utter.onstart = () => {
+            S.isSpeaking = true;
+            btn.innerHTML = '<i class="bi bi-stop-circle"></i>';
+            btn.classList.add('active');
+        };
+        utter.onend = () => {
+            S.isSpeaking = false;
+            btn.innerHTML = '<i class="bi bi-volume-up"></i>';
+            btn.classList.remove('active');
+        };
+        utter.onerror = () => {
+            S.isSpeaking = false;
+            btn.innerHTML = '<i class="bi bi-volume-up"></i>';
+            btn.classList.remove('active');
+        };
+        S.currentSpeechUtterance = utter;
+        window.speechSynthesis.speak(utter);
+    }
+
+    // ============================================================
+    //  ভয়েস ইনপুট
+    // ============================================================
+    function setupVoiceInput(){
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(!SpeechRec){
+            el('micBtn').style.display = 'none';
+            return;
+        }
+        const rec = new SpeechRec();
+        rec.lang = 'bn-IN';
+        rec.continuous = false;
+        rec.interimResults = true;
+        S.recognition = rec;
+        rec.onstart = () => {
+            S.isListening = true;
+            el('micBtn').classList.add('mic-pulse');
+            el('micBtn').style.color = 'var(--danger)';
+            el('micBtn').style.background = 'rgba(239,68,68,.1)';
+            el('micBtn').querySelector('i').className = 'bi bi-mic-fill text-base';
+            toast('বলা শুরু করুন...','bi-mic');
+        };
+        rec.onresult = (e) => {
+            let transcript = '';
+            for(let i = e.resultIndex; i < e.results.length; i++){
+                transcript += e.results[i][0].transcript;
+            }
+            msgIn.value = transcript;
+            msgIn.style.height = 'auto';
+            msgIn.style.height = Math.min(msgIn.scrollHeight, 160) + 'px';
+            sendBtn.disabled = !transcript.trim() || S.generating;
+        };
+        rec.onerror = (e) => {
+            toast('ভয়েস ইনপুট সমস্যা: ' + (e.error || 'অজানা'),'bi-mic-mute');
+            stopListening();
+        };
+        rec.onend = () => { stopListening(); };
+    }
+    function toggleVoiceInput(){
+        if(!S.recognition) return;
+        if(S.isListening){
+            try{ S.recognition.stop(); }catch(e){}
+            stopListening();
+        } else {
+            try{ S.recognition.start(); haptic('light'); }
+            catch(e){ toast('শুরু করা যায়নি','bi-mic-mute'); }
+        }
+    }
+    function stopListening(){
+        S.isListening = false;
+        el('micBtn').classList.remove('mic-pulse');
+        el('micBtn').style.color = 'var(--muted)';
+        el('micBtn').style.background = 'transparent';
+        el('micBtn').querySelector('i').className = 'bi bi-mic text-base';
+    }
+
+    // ============================================================
+    //  সেটিংস
+    // ============================================================
+    function openSett(){
+        haptic('light');
+        const wasOpen = !sb.classList.contains('-translate-x-full');
+        const profOpen = profPanel.classList.contains('open');
+        if(wasOpen) closeSb();
+        if(profOpen) closeProfile();
+        setTimeout(() => {
+            keyIn.value = S.apiKey;
+            modIn.value = S.model;
+            if(S.theme === 'dark') thmSw.classList.add('on');
+            else thmSw.classList.remove('on');
+            thmLbl.textContent = S.theme === 'dark' ? 'ডার্ক মোড' : 'লাইট মোড';
+            el('sysIn').value = S.settings.systemPrompt;
+            el('tempRange').value = S.settings.temperature;
+            el('tempVal').textContent = S.settings.temperature.toFixed(1);
+            el('fontRange').value = S.settings.fontScale;
+            el('fsVal').textContent = Math.round(S.settings.fontScale * 100) + '%';
+            updateRangeLabels();
+            el('hapticSw').classList.toggle('on', S.settings.haptic);
+            el('streamSw').classList.toggle('on', S.settings.stream);
+            el('autoScrollSw').classList.toggle('on', S.settings.autoScroll);
+            document.querySelectorAll('.model-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.model === S.model);
+            });
+            settMod.classList.remove('hidden');
+            settMod.classList.add('flex');
+            updateBackButton();
+            setTimeout(() => keyIn.focus(), 100);
+        }, (wasOpen || profOpen) ? 220 : 0);
+    }
+    function closeSett(){
+        settMod.classList.add('hidden');
+        settMod.classList.remove('flex');
+        updateBackButton();
+    }
+    function updateRangeLabels(){
+        const t = S.settings.temperature;
+        const tLbl = t < 0.4 ? 'নির্ভুল' : t < 0.9 ? 'সৃজনশীল' : t < 1.5 ? 'উদ্ভাবনী' : 'বেপরোয়া';
+        el('tempLbl').textContent = tLbl;
+        const f = S.settings.fontScale;
+        const fLbl = f < 0.95 ? 'ছোট' : f < 1.05 ? 'সাধারণ' : f < 1.15 ? 'বড়' : 'বৃহৎ';
+        el('fsLbl').textContent = fLbl;
+    }
+    function saveSett(){
+        haptic('success');
+        S.apiKey = keyIn.value.trim();
+        S.model = modIn.value.trim() || 'tencent/hy3:free';
+        S.settings.systemPrompt = el('sysIn').value.trim();
+        try{
+            localStorage.setItem('hy3_k', S.apiKey);
+            localStorage.setItem('hy3_m', S.model);
+        }catch(e){}
+        saveSettings();
+        document.documentElement.style.setProperty('--font-scale', S.settings.fontScale);
+        mBadge.textContent = S.model;
+        apiWarn.classList.toggle('hidden', !!S.apiKey);
+        cloudSave('hy3_k', S.apiKey);
+        cloudSave('hy3_m', S.model);
+        closeSett();
+        toast('সেটিংস সংরক্ষিত হয়েছে','bi-check-circle-fill');
+    }
+
+    // ============================================================
+    //  বায়ো এডিট
+    // ============================================================
+    function openBio(){
+        haptic('light');
+        el('bioIn').value = S.bio;
+        el('bioCount').textContent = S.bio.length;
+        el('bioMod').classList.remove('hidden');
+        el('bioMod').classList.add('flex');
+        updateBackButton();
+        setTimeout(() => el('bioIn').focus(), 100);
+    }
+    function closeBio(){
+        el('bioMod').classList.add('hidden');
+        el('bioMod').classList.remove('flex');
+        updateBackButton();
+    }
+    function saveBio(){
+        haptic('success');
+        S.bio = el('bioIn').value.trim();
+        try{ localStorage.setItem('hy3_bio', S.bio); }catch(e){}
+        cloudSave('hy3_bio', S.bio);
+        renderProfile();
+        closeBio();
+        toast('বায়ো সংরক্ষিত হয়েছে','bi-check-circle-fill');
+    }
+
+    // ============================================================
+    //  শেয়ার ও ক্লাউড সিঙ্ক
+    // ============================================================
+    function shareApp(){
+        haptic('light');
+        const shareText = 'HY3 ChatBot — Tencent Hunyuan-3 চালিত বাংলা চ্যাটবট। টেলিগ্রামে ব্যবহার করুন!';
+        const shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(location.href) + '&text=' + encodeURIComponent(shareText);
+        if(TG && TG.openTelegramLink) TG.openTelegramLink(shareUrl);
+        else if(TG && TG.openLink) TG.openLink(shareUrl);
+        else window.open(shareUrl, '_blank', 'noopener');
+    }
+    async function cloudSync(){
+        haptic('medium');
+        if(!TG || !TG.CloudStorage){
+            toast('ক্লাউড স্টোরেজ অনুপলব্ধ','bi-cloud-slash');
+            return;
+        }
+        try{
+            await cloudSave('hy3_c', JSON.stringify(S.convs));
+            await cloudSave('hy3_bio', S.bio);
+            await cloudSave('hy3_t', S.theme);
+            await cloudSave('hy3_m', S.model);
+            await cloudSave('hy3_s', JSON.stringify(S.settings));
+            haptic('success');
+            toast('ক্লাউডে সিঙ্ক সম্পূর্ণ','bi-cloud-check');
+        }catch(e){
+            haptic('error');
+            toast('সিঙ্ক ব্যর্থ হয়েছে','bi-cloud-slash');
+        }
+    }
+
+    async function loadFromCloud(){
+        if(!TG || !TG.CloudStorage) return;
+        if(S.convs.length === 0){
+            const cloudConvs = await cloudLoad('hy3_c');
+            if(cloudConvs){
+                try{
+                    const parsed = JSON.parse(cloudConvs);
+                    if(Array.isArray(parsed) && parsed.length > 0){
+                        S.convs = parsed;
+                        saveConvs();
+                        renderList();
+                        renderProfile();
+                        toast('ক্লাউড থেকে চ্যাট রিকভার হয়েছে','bi-cloud-download');
+                    }
+                }catch(e){}
+            }
+        }
+        if(!S.bio){
+            const cloudBio = await cloudLoad('hy3_bio');
+            if(cloudBio){
+                S.bio = cloudBio;
+                try{ localStorage.setItem('hy3_bio', S.bio); }catch(e){}
+                renderProfile();
+            }
+        }
+    }
+
+    // ============================================================
+    //  এক্সপোর্ট ও ইম্পোর্ট
+    // ============================================================
+    function exportChat(conv){
+        const c = conv || S.convs.find(x => x.id === S.curId);
+        if(!c){ toast('এক্সপোর্ট করার মতো চ্যাট নেই','bi-info-circle'); return; }
+        haptic('light');
+        const data = { app: 'HY3 ChatBot', version: 1, exported: new Date().toISOString(), chat: c };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hy3-chat-${c.id}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('চ্যাট এক্সপোর্ট হয়েছে','bi-download');
+    }
+    function exportAllChats(){
+        if(!S.convs.length){ toast('এক্সপোর্ট করার মতো চ্যাট নেই','bi-info-circle'); return; }
+        haptic('light');
+        const data = { app: 'HY3 ChatBot', version: 1, exported: new Date().toISOString(), chats: S.convs };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hy3-all-chats-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('সব চ্যাট এক্সপোর্ট হয়েছে','bi-download');
+    }
+    function exportAsText(conv){
+        const c = conv || S.convs.find(x => x.id === S.curId);
+        if(!c || !c.messages || !c.messages.length){ toast('মেসেজ নেই','bi-info-circle'); return; }
+        haptic('light');
+        let txt = `HY3 ChatBot — চ্যাট এক্সপোর্ট\n${c.title}\nতারিখ: ${fmtDate(c.ts)}\n${'='.repeat(50)}\n\n`;
+        c.messages.forEach(m => {
+            const role = m.role === 'user' ? 'ইউজার' : 'HY3';
+            txt += `[${fmtTime(m.ts)}] ${role}:\n${m.content}\n\n`;
+        });
+        const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hy3-chat-${c.id}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('টেক্সট ফাইল তৈরি হয়েছে','bi-file-text');
+    }
+    function importChat(file){
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try{
+                const data = JSON.parse(e.target.result);
+                let chat;
+                if(data.chat) chat = data.chat;
+                else if(data.chats && data.chats.length){
+                    data.chats.forEach(c => {
+                        const newId = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                        S.convs.unshift({ ...c, id: newId, ts: Date.now() });
+                    });
+                    saveConvs();
+                    renderList();
+                    renderProfile();
+                    haptic('success');
+                    toast(`${data.chats.length} টি চ্যাট ইম্পোর্ট হয়েছে`,'bi-file-earmark-arrow-up');
+                    return;
+                }
+                else if(Array.isArray(data)){
+                    chat = {
+                        id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                        title: 'ইম্পোর্টেড চ্যাট',
+                        messages: data,
+                        ts: Date.now()
+                    };
+                } else { throw new Error('Invalid format'); }
+
+                const newId = 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+                const newChat = { ...chat, id: newId, ts: Date.now() };
+                S.convs.unshift(newChat);
+                saveConvs();
+                renderList();
+                renderProfile();
+                haptic('success');
+                toast('চ্যাট ইম্পোর্ট হয়েছে','bi-file-earmark-arrow-up');
+            }catch(err){
+                haptic('error');
+                toast('ফাইল পড়া যায়নি','bi-x-circle');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // ============================================================
+    //  মেসেজ সার্চ
+    // ============================================================
+    function openMsgSearch(){
+        haptic('light');
+        el('msgSearchBar').classList.remove('hidden');
+        setTimeout(() => el('msgSearchIn').focus(), 100);
+        updateBackButton();
+    }
+    function closeMsgSearch(){
+        el('msgSearchBar').classList.add('hidden');
+        el('msgSearchIn').value = '';
+        el('msgSearchCount').textContent = '';
+        el('msgSearchClr').classList.add('hidden');
+        S.searchQuery = '';
+        highlightSearch('');
+        updateBackButton();
+    }
+    function performMsgSearch(q){
+        S.searchQuery = q.trim();
+        if(!S.searchQuery){
+            el('msgSearchCount').textContent = '';
+            el('msgSearchClr').classList.add('hidden');
+            highlightSearch('');
+            return;
+        }
+        el('msgSearchClr').classList.remove('hidden');
+        const matches = highlightSearch(S.searchQuery);
+        el('msgSearchCount').textContent = matches ? `${matches} টি` : '০';
+    }
+    function highlightSearch(q){
+        if(!q){
+            msgC.querySelectorAll('mark.search-hl').forEach(m => {
+                const parent = m.parentNode;
+                parent.replaceChild(document.createTextNode(m.textContent), m);
+                parent.normalize();
+            });
+            return 0;
+        }
+        const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let count = 0;
+        function walk(node){
+            if(node.nodeType === 3){
+                const text = node.textContent;
+                if(re.test(text)){
+                    re.lastIndex = 0;
+                    const span = document.createElement('span');
+                    span.innerHTML = text.replace(re, m => `<mark class="search-hl">${esc(m)}</mark>`);
+                    node.parentNode.replaceChild(span, node);
+                    count += (span.innerHTML.match(/<mark/g) || []).length;
+                }
+            } else if(node.nodeType === 1 && node.tagName !== 'CODE' && node.tagName !== 'PRE' && node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE'){
+                Array.from(node.childNodes).forEach(walk);
+            }
+        }
+        msgC.querySelectorAll('mark.search-hl').forEach(m => {
+            const parent = m.parentNode;
+            parent.replaceChild(document.createTextNode(m.textContent), m);
+            parent.normalize();
+        });
+        msgC.querySelectorAll('.mc').forEach(walk);
+        return count;
+    }
+
+    // ============================================================
+    //  ইভেন্ট বাইন্ডিং
+    // ============================================================
+    function bindEvents(){
+        sendBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const text = msgIn.value.trim();
+            if(!text || S.generating) return;
+            sendMsg(text);
+            msgIn.value = '';
+            msgIn.style.height = 'auto';
+            sendBtn.disabled = true;
+        });
+
+        el('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = msgIn.value.trim();
+            if(!text || S.generating) return;
+            sendMsg(text);
+            msgIn.value = '';
+            msgIn.style.height = 'auto';
+            sendBtn.disabled = true;
+        });
+
+        msgIn.addEventListener('input', function(){
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+            sendBtn.disabled = !this.value.trim() || S.generating;
+        });
+
+        msgIn.addEventListener('keydown', function(e){
+            if(e.key === 'Enter' && !e.shiftKey){
+                e.preventDefault();
+                const text = this.value.trim();
+                if(!text || S.generating) return;
+                sendMsg(text);
+                this.value = '';
+                this.style.height = 'auto';
+                sendBtn.disabled = true;
+            }
+        });
+
+        stopBtn.addEventListener('click', (e) => { e.preventDefault(); stopGen(); });
+        el('micBtn').addEventListener('click', toggleVoiceInput);
+
+        if(TG && TG.MainButton) TG.MainButton.onClick(() => { if(S.generating) stopGen(); });
+
+        el('menuBtn').addEventListener('click', toggleSb);
+        el('sbClose').addEventListener('click', closeSb);
+        sbOv.addEventListener('click', closeSb);
+        el('newChatBtn').addEventListener('click', newChat);
+        el('clearAllBtn').addEventListener('click', clearAll);
+        el('settBtn').addEventListener('click', openSett);
+        el('settBtn2').addEventListener('click', openSett);
+        el('importBtn').addEventListener('click', () => { haptic('light'); el('fileInput').click(); });
+        el('fileInput').addEventListener('change', (e) => {
+            if(e.target.files[0]) importChat(e.target.files[0]);
+            e.target.value = '';
+        });
+
+        el('chatSearchIn').addEventListener('input', () => {
+            const v = el('chatSearchIn').value;
+            el('chatSearchClr').classList.toggle('hidden', !v);
+            renderList();
+        });
+        el('chatSearchClr').addEventListener('click', () => {
+            el('chatSearchIn').value = '';
+            el('chatSearchClr').classList.add('hidden');
+            renderList();
+        });
+
+        el('searchBtn').addEventListener('click', openMsgSearch);
+        el('msgSearchIn').addEventListener('input', (e) => performMsgSearch(e.target.value));
+        el('msgSearchClr').addEventListener('click', () => {
+            el('msgSearchIn').value = '';
+            performMsgSearch('');
+        });
+        el('msgSearchClose').addEventListener('click', closeMsgSearch);
+
+        el('profBtn').addEventListener('click', openProfile);
+        el('profBtnSidebar').addEventListener('click', openProfile);
+        el('profClose').addEventListener('click', closeProfile);
+        el('editBioBtn').addEventListener('click', openBio);
+        el('shareBtn').addEventListener('click', shareApp);
+        el('cloudSyncBtn').addEventListener('click', cloudSync);
+        el('exportBtn').addEventListener('click', () => {
+            haptic('light');
+            if(S.convs.length === 0){ toast('এক্সপোর্ট করার মতো চ্যাট নেই','bi-info-circle'); return; }
+            exportAllChats();
+        });
+        el('closeAppBtn').addEventListener('click', () => {
+            haptic('medium');
+            if(TG && TG.close){ try{ TG.close(); }catch(e){ window.close(); } }
+            else window.close();
+        });
+
+        el('bioIn').addEventListener('input', function(){ el('bioCount').textContent = this.value.length; });
+        el('bioClose').addEventListener('click', closeBio);
+        el('bioModOv').addEventListener('click', closeBio);
+        el('bioSave').addEventListener('click', saveBio);
+        el('bioCancel').addEventListener('click', closeBio);
+
+        el('editClose').addEventListener('click', closeEdit);
+        el('editModOv').addEventListener('click', closeEdit);
+        el('editSave').addEventListener('click', saveEdit);
+        el('editCancel').addEventListener('click', closeEdit);
+
+        el('thmBtn').addEventListener('click', toggleTheme);
+        thmSw.addEventListener('click', toggleTheme);
+
+        el('settClose').addEventListener('click', closeSett);
+        el('settModOv').addEventListener('click', closeSett);
+        el('saveBtn').addEventListener('click', saveSett);
+        el('cancelBtn').addEventListener('click', closeSett);
+        el('apiWarnBtn').addEventListener('click', openSett);
+
+        el('keyVis').addEventListener('click', () => {
+            haptic('select');
+            const isP = keyIn.type === 'password';
+            keyIn.type = isP ? 'text' : 'password';
+            el('keyVisI').className = isP ? 'bi bi-eye-slash' : 'bi bi-eye';
+        });
+
+        document.querySelectorAll('.model-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                haptic('select');
+                modIn.value = chip.dataset.model;
+                document.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            });
+        });
+
+        el('tempRange').addEventListener('input', function(){
+            S.settings.temperature = parseFloat(this.value);
+            el('tempVal').textContent = S.settings.temperature.toFixed(1);
+            updateRangeLabels();
+        });
+        el('fontRange').addEventListener('input', function(){
+            S.settings.fontScale = parseFloat(this.value);
+            el('fsVal').textContent = Math.round(S.settings.fontScale * 100) + '%';
+            updateRangeLabels();
+        });
+        el('hapticSw').addEventListener('click', function(){
+            haptic('select');
+            this.classList.toggle('on');
+            S.settings.haptic = this.classList.contains('on');
+        });
+        el('streamSw').addEventListener('click', function(){
+            haptic('select');
+            this.classList.toggle('on');
+            S.settings.stream = this.classList.contains('on');
+        });
+        el('autoScrollSw').addEventListener('click', function(){
+            haptic('select');
+            this.classList.toggle('on');
+            S.settings.autoScroll = this.classList.contains('on');
+        });
+
+        if(window.visualViewport){
+            let lastH = window.innerHeight;
+            window.visualViewport.addEventListener('resize', () => {
+                const h = window.visualViewport.height;
+                if(Math.abs(h - lastH) > 50){
+                    document.documentElement.style.setProperty('--vh', h + 'px');
+                    lastH = h;
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape'){
+                if(!settMod.classList.contains('hidden')) closeSett();
+                else if(!el('bioMod').classList.contains('hidden')) closeBio();
+                else if(!el('editMod').classList.contains('hidden')) closeEdit();
+                else if(profPanel.classList.contains('open')) closeProfile();
+                else if(!el('msgSearchBar').classList.contains('hidden')) closeMsgSearch();
+                else if(!sb.classList.contains('-translate-x-full')) closeSb();
+            }
+            if((e.ctrlKey || e.metaKey) && e.key === 'k'){
+                e.preventDefault();
+                openMsgSearch();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => { if(S.curId) updateConv(); });
+
+        window.addEventListener('online', () => {
+            stDot.style.background = 'var(--accent)';
+            stDot.style.opacity = '.4';
+        });
+        window.addEventListener('offline', () => {
+            stDot.style.background = 'var(--danger)';
+            stDot.style.opacity = '1';
+            toast('ইন্টারনেট সংযোগ নেই','bi-wifi-off');
+        });
+
+        if('speechSynthesis' in window){
+            window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+        }
+    }
+
+    // ============================================================
+    //  ইনিশিয়ালাইজ
+    // ============================================================
+    function init(){
+        load();
+        initTelegram();
+        mBadge.textContent = S.model;
+        apiWarn.classList.toggle('hidden', !!S.apiKey);
+        setTheme(S.theme, false);
+        document.documentElement.style.setProperty('--font-scale', S.settings.fontScale);
+        renderSuggestions();
+        renderList();
+        renderProfile();
+        bindEvents();
+        setupBackButton();
+        setupVoiceInput();
+        msgIn.focus();
+        setTimeout(loadFromCloud, 500);
+        if(S.user && S.user.first_name) el('welcName').textContent = 'স্বাগতম, ' + S.user.first_name;
+        if(!navigator.onLine){
+            stDot.style.background = 'var(--danger)';
+            stDot.style.opacity = '1';
+        }
+    }
+
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+
+})();
+
+</script>
+</body>
+</html>

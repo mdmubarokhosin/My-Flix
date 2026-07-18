@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="description" content="All Video Hub - Admin Control Panel">
+    <title>Admin Panel | All Video Hub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <!-- TMA SDK wrapper (MainButton / BackButton / HapticFeedback / CloudStorage / Popup / Theme) -->
+    <script src="tma-sdk.js"></script>
+    <!-- TMA Bootstrap (auto-haptics, native back button, viewport sync, settings button) -->
+    <script src="tma-bootstrap.js"></script>
+    <style>
+/* ===================== CSS VARIABLES ===================== */
+:root{
+    --primary:#ff0000;--primary-dark:#cc0000;--primary-light:rgba(255,0,0,.3);
+    --bg-dark:#121212;--bg-darker:#0a0a0a;--bg-card:#1e1e1e;--bg-card-hover:#2a2a2a;
+    --text-light:#f5f5f5;--text-muted:#999;--border-color:#333;
+    --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--info:#3498db;
+    --radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+    --shadow-sm:0 2px 8px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4);--shadow-lg:0 8px 32px rgba(0,0,0,.5);
+    --transition:all .3s ease;--font:'Segoe UI',system-ui,-apple-system,sans-serif;
+    --nav-height:60px;--coin-color:#FFCB09;
+    --admin-accent:#6366f1;--admin-accent-hover:#818cf8;--admin-accent-light:rgba(99,102,241,.15);
+    --admin-success-bg:rgba(46,204,113,.15);--admin-danger-bg:rgba(231,76,60,.15);
+    --admin-warning-bg:rgba(243,156,18,.15);--admin-info-bg:rgba(52,152,219,.15);
+}
+html.light-mode{
+    --bg-dark:#f5f5f5;--bg-darker:#ffffff;--bg-card:#ffffff;--bg-card-hover:#f0f0f0;
+    --text-light:#1a1a1a;--text-muted:#666;--border-color:#ddd;
+    --shadow-sm:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 4px 16px rgba(0,0,0,.1);--shadow-lg:0 8px 32px rgba(0,0,0,.15);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+    background:var(--bg-dark);color:var(--text-light);font-family:var(--font);
+    min-height:100vh;min-height:100dvh;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom));
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+    overflow-x:hidden;-webkit-tap-highlight-color:transparent;line-height:1.5;
+    overscroll-behavior-y:contain;
+    -webkit-user-select:none;user-select:none;
+}
+/* Allow text selection in inputs/textareas */
+input,textarea,select{user-select:text;-webkit-user-select:text}
+
+/* ===================== PRELOADER ===================== */
+#preloader{position:fixed;inset:0;background:var(--bg-dark);display:flex;
+    justify-content:center;align-items:center;z-index:9999;transition:opacity .5s ease}
+#preloader.fade-out{opacity:0;pointer-events:none}
+.preloader-content{display:flex;flex-direction:column;align-items:center;gap:24px}
+.preloader-animation{display:flex;gap:12px}
+.preloader-bar{width:10px;height:50px;background:var(--primary);border-radius:5px;
+    animation:barPulse 1.2s infinite ease-in-out}
+.preloader-bar:nth-child(1){animation-delay:0s}
+.preloader-bar:nth-child(2){animation-delay:.15s}
+.preloader-bar:nth-child(3){animation-delay:.3s}
+.preloader-bar:nth-child(4){animation-delay:.45s}
+.preloader-text{font-size:1rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted)}
+@keyframes barPulse{0%,100%{transform:scaleY(.5);opacity:.5}50%{transform:scaleY(1.3);opacity:1}}
+
+/* ===================== HEADER ===================== */
+header{background:var(--bg-darker);padding:10px 16px;display:flex;justify-content:space-between;
+    align-items:center;box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:100;
+    min-height:52px;padding-top:max(10px,env(safe-area-inset-top))}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--admin-accent),var(--primary));
+    display:flex;justify-content:center;align-items:center;font-size:16px;color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.4)}
+.logo-text{font-size:17px;font-weight:700;color:var(--admin-accent);text-transform:uppercase;letter-spacing:1px}
+.logo-text small{display:block;font-size:9px;color:var(--text-muted);font-weight:500;letter-spacing:.5px;text-transform:uppercase;margin-top:-2px}
+.header-actions{display:flex;align-items:center;gap:8px}
+.icon-btn{background:var(--bg-card);border:1px solid var(--border-color);color:var(--text-light);font-size:16px;
+    cursor:pointer;transition:var(--transition);padding:8px 10px;border-radius:var(--radius-sm);min-width:38px;min-height:38px;
+    display:inline-flex;align-items:center;justify-content:center}
+.icon-btn:hover{background:var(--bg-card-hover);border-color:var(--admin-accent);color:var(--admin-accent)}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-light);text-decoration:none;
+    background:var(--bg-card);border:1px solid var(--border-color);padding:8px 14px;border-radius:var(--radius-sm);
+    font-size:13px;font-weight:500;transition:var(--transition)}
+.back-link:hover{background:var(--bg-card-hover);border-color:var(--primary);color:var(--primary)}
+
+/* ===================== LOGIN SCREEN ===================== */
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px);
+    padding:20px;padding-bottom:calc(var(--nav-height) + 20px)}
+.login-box{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);
+    padding:32px 24px;max-width:380px;width:100%;box-shadow:var(--shadow-lg);text-align:center;
+    animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.login-icon{width:64px;height:64px;border-radius:50%;background:var(--admin-accent-light);
+    display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--admin-accent);margin:0 auto 16px}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.login-box p{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.form-input{width:100%;padding:12px 14px;background:var(--bg-card-hover);border:1px solid var(--border-color);
+    color:var(--text-light);border-radius:var(--radius-sm);font-size:15px;outline:none;margin-bottom:12px;
+    transition:var(--transition)}
+.form-input:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px var(--admin-accent-light)}
+.form-input::placeholder{color:#666}
+.login-error{color:var(--danger);font-size:13px;display:none;margin-bottom:10px;padding:8px;
+    background:var(--admin-danger-bg);border-radius:var(--radius-sm);border-left:3px solid var(--danger)}
+.login-error.show{display:block;animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;
+    border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;
+    transition:var(--transition);min-height:42px;width:100%}
+.btn-primary{background:var(--admin-accent);color:#fff}
+.btn-primary:hover{background:var(--admin-accent-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.3)}
+.btn-primary:active{transform:translateY(0)}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#27ae60}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#c0392b}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border-color)}
+.btn-ghost:hover{background:var(--bg-card-hover);color:var(--text-light)}
+.btn-sm{padding:7px 12px;font-size:12px;min-height:34px;width:auto}
+
+/* ===================== ADMIN DASHBOARD ===================== */
+.dashboard{padding:12px;max-width:1200px;margin:0 auto}
+
+/* Tabs */
+.admin-tabs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--border-color);
+    margin-bottom:16px;gap:0;scrollbar-width:none;background:var(--bg-darker);border-radius:var(--radius-sm);
+    padding:0 4px;position:sticky;top:52px;z-index:50}
+.admin-tabs::-webkit-scrollbar{display:none}
+.admin-tab{padding:14px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-muted);
+    white-space:nowrap;border-bottom:2px solid transparent;transition:var(--transition);
+    display:flex;align-items:center;gap:6px;min-height:48px}
+.admin-tab:hover{color:var(--text-light)}
+.admin-tab.active{color:var(--admin-accent);border-bottom-color:var(--admin-accent)}
+.admin-tab i{font-size:14px}
+
+/* Sub-panels */
+.admin-sub-panel{display:none;animation:fadeIn .3s ease}
+.admin-sub-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* Stats Grid */
+.admin-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.admin-stat-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);
+    padding:18px;display:flex;align-items:center;gap:14px;transition:var(--transition)}
+.admin-stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--admin-accent)}
+.admin-stat-icon{width:48px;height:48px;border-radius:var(--radius-sm);display:flex;
+    align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.admin-stat-icon.videos{background:var(--admin-accent-light);color:var(--admin-accent)}
+.admin-stat-icon.codes{background:var(--admin-success-bg);color:var(--success)}
+.admin-stat-icon.active{background:var(--admin-warning-bg);color:var(--warning)}
+.admin-stat-icon.users{background:var(--admin-info-bg);color:var(--info)}
+.admin-stat-icon.coins{background:var(--admin-danger-bg);color:var(--danger)}
+.admin-stat-info h3{font-size:24px;font-weight:700;line-height:1.2}
+.admin-stat-info p{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Form Card */
+.admin-form-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);
+    padding:20px;margin-bottom:20px}
+.admin-form-card h3{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--admin-accent);
+    display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border-color)}
+.admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.admin-form-group{margin-bottom:12px}
+.admin-form-group label{display:block;font-size:11px;font-weight:600;color:var(--text-muted);
+    margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.admin-form-input{width:100%;padding:10px 14px;background:var(--bg-card-hover);border:1px solid var(--border-color);
+    color:var(--text-light);border-radius:var(--radius-sm);font-size:14px;outline:none;transition:var(--transition)}
+.admin-form-input:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px var(--admin-accent-light)}
+.admin-form-input::placeholder{color:#666}
+textarea.admin-form-input{min-height:90px;resize:vertical;font-family:inherit;line-height:1.6}
+select.admin-form-input{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.form-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* Search */
+.admin-search{position:relative;margin-bottom:16px}
+.admin-search input{width:100%;padding:11px 14px 11px 38px;background:var(--bg-card);
+    border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-light);
+    font-size:14px;outline:none;transition:var(--transition)}
+.admin-search input:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px var(--admin-accent-light)}
+.admin-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px}
+
+/* Table */
+.admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--bg-card);
+    border:1px solid var(--border-color);border-radius:var(--radius-md);margin-bottom:20px}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+.admin-table th{background:var(--bg-card-hover);padding:12px 14px;text-align:left;font-size:11px;
+    font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;
+    white-space:nowrap;position:sticky;top:0}
+.admin-table td{padding:12px 14px;border-top:1px solid var(--border-color);vertical-align:middle}
+.admin-table tr:hover td{background:rgba(99,102,241,.04)}
+.admin-table .act-cell{display:flex;gap:4px;flex-wrap:nowrap}
+
+/* Badges */
+.admin-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;
+    font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;gap:4px}
+.admin-badge-active{background:var(--admin-success-bg);color:var(--success)}
+.admin-badge-used{background:var(--admin-danger-bg);color:var(--danger)}
+.admin-tag{display:inline-block;padding:2px 7px;background:var(--bg-card-hover);border-radius:3px;
+    font-size:10px;color:var(--text-muted);margin:1px}
+.admin-code-cell{font-family:'Courier New',monospace;font-weight:700;color:var(--admin-accent);
+    cursor:pointer;user-select:all}
+.admin-code-cell:hover{text-decoration:underline}
+.admin-thumb-preview{width:60px;height:38px;object-fit:cover;border-radius:3px;background:var(--bg-card-hover);display:block}
+
+/* Settings */
+.admin-settings-section{background:var(--bg-card);border:1px solid var(--border-color);
+    border-radius:var(--radius-md);padding:20px;margin-bottom:16px}
+.admin-settings-section h3{font-size:15px;font-weight:700;margin-bottom:16px;
+    display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border-color)}
+.admin-settings-section h3 i{color:var(--admin-accent)}
+
+/* Empty state */
+.admin-empty{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.admin-empty i{font-size:36px;margin-bottom:12px;display:block;opacity:.5}
+
+/* Spinner */
+.admin-spinner{width:32px;height:32px;border:3px solid var(--border-color);border-top-color:var(--admin-accent);
+    border-radius:50%;animation:spin .8s linear infinite;margin:30px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Modal */
+.admin-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;
+    align-items:center;justify-content:center;z-index:200;padding:16px}
+.admin-modal-overlay.open{display:flex}
+.admin-modal{background:var(--bg-darker);border:1px solid var(--border-color);border-radius:var(--radius-lg);
+    width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(-20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.admin-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+    border-bottom:1px solid var(--border-color)}
+.admin-modal-header h3{font-size:16px;font-weight:700}
+.admin-modal-close{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;
+    min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--radius-sm);transition:var(--transition)}
+.admin-modal-close:hover{background:var(--bg-card-hover);color:var(--text-light)}
+.admin-modal-body{padding:20px}
+.admin-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    padding:14px 20px;border-top:1px solid var(--border-color);flex-wrap:wrap}
+.admin-confirm-body{text-align:center;padding:16px 0}
+.admin-confirm-body i{font-size:48px;color:var(--warning);margin-bottom:12px;display:block}
+.admin-confirm-body p{font-size:14px;color:var(--text-muted);line-height:1.6}
+
+/* Toast */
+.admin-toast-container{position:fixed;top:60px;right:12px;z-index:300;display:flex;
+    flex-direction:column;gap:8px;max-width:340px;pointer-events:none}
+.admin-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;
+    background:var(--bg-darker);border:1px solid var(--border-color);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-md);animation:toastIn .3s ease;font-size:13px;pointer-events:auto}
+.admin-toast.success{border-left:4px solid var(--success)}
+.admin-toast.error{border-left:4px solid var(--danger)}
+.admin-toast.info{border-left:4px solid var(--info)}
+.admin-toast.success i{color:var(--success)}
+.admin-toast.error i{color:var(--danger)}
+.admin-toast.info i{color:var(--info)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+/* Footer Nav */
+.footer-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-darker);
+    display:flex;justify-content:space-around;padding:6px 0;
+    padding-bottom:max(6px,env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.5);z-index:100;height:var(--nav-height)}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:var(--text-muted);
+    text-decoration:none;font-size:10px;padding:4px 12px;border-radius:var(--radius-sm);
+    transition:var(--transition);cursor:pointer;min-width:44px}
+.nav-item i{font-size:18px;margin-bottom:2px}
+.nav-item.active,.nav-item:hover{color:var(--admin-accent)}
+.nav-item.active{background:var(--admin-accent-light)}
+
+/* Back button */
+.back-btn{display:none;position:sticky;top:52px;z-index:99;background:var(--bg-card);
+    border:none;color:var(--text-light);padding:10px 16px;font-size:13px;cursor:pointer;
+    border-bottom:1px solid var(--border-color);transition:var(--transition);width:100%;
+    text-align:left;gap:8px;align-items:center;font-weight:500}
+.back-btn:hover{background:var(--bg-card-hover)}
+.back-btn i{margin-right:4px}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;padding:0 2px;flex-wrap:wrap;gap:8px}
+.section-header h2{font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;
+    display:flex;align-items:center;gap:8px}
+
+/* Hint text */
+.hint{font-size:12px;color:var(--text-muted);margin-top:6px;line-height:1.5}
+
+/* Theme switch */
+.theme-switch{position:relative;width:48px;height:26px;cursor:pointer;display:inline-block}
+.theme-switch input{opacity:0;width:0;height:0}
+.theme-slider{position:absolute;inset:0;background:var(--border-color);border-radius:26px;transition:.3s}
+.theme-slider:before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.3s}
+.theme-switch input:checked+.theme-slider{background:var(--admin-accent)}
+.theme-switch input:checked+.theme-slider:before{transform:translateX(22px)}
+
+/* ===================== RESPONSIVE ===================== */
+@media(max-width:600px){
+    .login-box{padding:24px 18px}
+    .login-box h1{font-size:19px}
+    .admin-form-row{grid-template-columns:1fr}
+    .admin-stats-grid{grid-template-columns:1fr 1fr;gap:10px}
+    .admin-stat-card{padding:14px;gap:10px}
+    .admin-stat-icon{width:40px;height:40px;font-size:16px}
+    .admin-stat-info h3{font-size:20px}
+    .admin-modal{max-width:100%}
+    .admin-table{font-size:12px}
+    .admin-table th,.admin-table td{padding:10px 8px}
+    .logo-text{font-size:14px}
+    .logo-text small{font-size:8px}
+    .dashboard{padding:8px}
+    .admin-form-card,.admin-settings-section{padding:14px}
+    .btn{padding:11px 14px;font-size:13px}
+    .admin-tabs{top:48px}
+    .admin-tab{padding:12px 12px;font-size:12px}
+}
+@media(max-width:360px){
+    .admin-stats-grid{grid-template-columns:1fr}
+    .admin-table{font-size:11px}
+    .header-actions{gap:6px}
+    .icon-btn{padding:6px 8px;font-size:14px;min-width:34px;min-height:34px}
+}
+@media(min-width:768px){
+    .dashboard{padding:20px}
+    .admin-stats-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-darker)}
+::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--admin-accent)}
+
+/* Focus visible for keyboard nav */
+*:focus-visible{outline:2px solid var(--admin-accent);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-offset:0}
+
+/* Safe area for iPhone notch */
+@supports(padding:max(0px)){header{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}}
+    </style>
+</head>
+<body>
+
+<!-- Preloader -->
+<div id="preloader">
+    <div class="preloader-content">
+        <div class="preloader-animation">
+            <div class="preloader-bar"></div><div class="preloader-bar"></div>
+            <div class="preloader-bar"></div><div class="preloader-bar"></div>
+        </div>
+        <div class="preloader-text">Loading Admin...</div>
+    </div>
+</div>
+
+<!-- Header -->
+<header>
+    <div class="logo">
+        <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+        <div class="logo-text">Admin<small>Control Panel</small></div>
+    </div>
+    <div class="header-actions">
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+        <a class="back-link" href="index.html"><i class="fas fa-arrow-left"></i> Site</a>
+    </div>
+</header>
+
+<!-- Back Button -->
+<button class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+    <div class="login-box">
+        <div class="login-icon"><i class="fas fa-lock"></i></div>
+        <h1>Admin Panel</h1>
+        <p>Enter your password to access the control panel</p>
+        <input type="password" id="passInput" class="form-input" placeholder="Admin Password" autocomplete="current-password">
+        <div class="login-error" id="loginError"><i class="fas fa-exclamation-circle"></i> Incorrect password. Try again.</div>
+        <button class="btn btn-primary" id="loginBtn"><i class="fas fa-right-to-bracket"></i> Sign In</button>
+        <p class="hint">Default password: <code style="color:var(--admin-accent);font-weight:600">admin123</code> (change it after first login)</p>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard" id="dashboard" style="display:none">
+    <!-- Tabs -->
+    <div class="admin-tabs" id="adminTabs">
+        <div class="admin-tab active" data-atab="dashboard"><i class="fas fa-gauge-high"></i> Dashboard</div>
+        <div class="admin-tab" data-atab="videos"><i class="fas fa-film"></i> Videos</div>
+        <div class="admin-tab" data-atab="categories"><i class="fas fa-tags"></i> Categories</div>
+        <div class="admin-tab" data-atab="giftcodes"><i class="fas fa-gift"></i> Gift Codes</div>
+        <div class="admin-tab" data-atab="users"><i class="fas fa-users"></i> Users</div>
+        <div class="admin-tab" data-atab="settings"><i class="fas fa-gear"></i> Settings</div>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div class="admin-sub-panel active" id="adminTab-dashboard">
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon videos"><i class="fas fa-film"></i></div>
+                <div class="admin-stat-info"><h3 id="statVideos">0</h3><p>Videos</p></div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon codes"><i class="fas fa-gift"></i></div>
+                <div class="admin-stat-info"><h3 id="statCodes">0</h3><p>Gift Codes</p></div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon active"><i class="fas fa-check-circle"></i></div>
+                <div class="admin-stat-info"><h3 id="statActive">0</h3><p>Active Codes</p></div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon users"><i class="fas fa-users"></i></div>
+                <div class="admin-stat-info"><h3 id="statUsers">0</h3><p>Users</p></div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="admin-stat-icon coins"><i class="fas fa-coins"></i></div>
+                <div class="admin-stat-info"><h3 id="statCoins">0</h3><p>Coins in Codes</p></div>
+            </div>
+        </div>
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+            <div class="form-actions">
+                <button class="btn btn-primary btn-sm" data-quick="videos"><i class="fas fa-plus"></i> Add Video</button>
+                <button class="btn btn-success btn-sm" data-quick="giftcodes"><i class="fas fa-gift"></i> Create Gift Code</button>
+                <button class="btn btn-ghost btn-sm" data-quick="users"><i class="fas fa-users"></i> View Users</button>
+            </div>
+        </div>
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-database"></i> One-Click Demo Setup</h3>
+            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;line-height:1.5">
+                Seeds <strong>10 categories</strong>, <strong>30 demo videos</strong> (3 per category),
+                <strong>2 demo users</strong>, and sets admin password to <code>admin123</code>.
+                <br><span style="color:var(--warning);font-size:12px"><i class="fas fa-exclamation-triangle"></i> Use only on a fresh database — existing data with matching keys will be overwritten.</span>
+            </p>
+            <button class="btn btn-success btn-sm" id="seedDataBtn" style="width:100%">
+                <i class="fas fa-seedling"></i> Seed Demo Data (10 Categories + 30 Videos + 2 Users)
+            </button>
+        </div>
+    </div>
+
+    <!-- VIDEOS TAB -->
+    <div class="admin-sub-panel" id="adminTab-videos">
+        <div class="admin-form-card" id="videoFormCard">
+            <h3 id="videoFormTitle"><i class="fas fa-plus-circle"></i> Add New Video</h3>
+            <input type="hidden" id="vEditId" value="">
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="vName">Name *</label>
+                    <input type="text" id="vName" class="admin-form-input" placeholder="Video name" maxlength="200">
+                </div>
+                <div class="admin-form-group">
+                    <label for="vUrl">Video URL *</label>
+                    <input type="url" id="vUrl" class="admin-form-input" placeholder="https://...">
+                </div>
+            </div>
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="vThumb">Thumbnail URL</label>
+                    <input type="url" id="vThumb" class="admin-form-input" placeholder="https://...">
+                </div>
+                <div class="admin-form-group">
+                    <label for="vAmount">Coins *</label>
+                    <input type="number" id="vAmount" class="admin-form-input" placeholder="50" min="0" max="9999">
+                </div>
+            </div>
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="vDuration">Duration</label>
+                    <input type="text" id="vDuration" class="admin-form-input" placeholder="10:30 or 01:25:40">
+                </div>
+                <div class="admin-form-group">
+                    <label for="vTags">Tags (comma-separated)</label>
+                    <input type="text" id="vTags" class="admin-form-input" placeholder="action, drama, hindi">
+                </div>
+            </div>
+            <div class="admin-form-group">
+                <label for="vInfo">Description (one paragraph per line)</label>
+                <textarea id="vInfo" class="admin-form-input" placeholder="Description line 1&#10;Description line 2"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="vSubmitBtn"><i class="fas fa-save"></i> <span id="vSubmitText">Add Video</span></button>
+                <button class="btn btn-ghost btn-sm" id="vCancelBtn" style="display:none"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+        </div>
+        <div class="admin-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="vSearch" placeholder="Search videos by name, tag, or ID...">
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr>
+                    <th>ID</th><th>Thumb</th><th>Name</th><th>Coins</th><th>Tags</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="vTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CATEGORIES TAB -->
+    <div class="admin-sub-panel" id="adminTab-categories">
+        <div class="admin-form-card">
+            <h3><i class="fas fa-plus-circle"></i> Add Category</h3>
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="cName">Category Name *</label>
+                    <input type="text" id="cName" class="admin-form-input" placeholder="e.g. Horror" maxlength="40">
+                </div>
+                <div class="admin-form-group">
+                    <label for="cIcon">Icon (FontAwesome class)</label>
+                    <input type="text" id="cIcon" class="admin-form-input" placeholder="fas fa-ghost">
+                    <p class="hint"><i class="fas fa-info-circle"></i> Browse icons at <a href="https://fontawesome.com/icons" target="_blank" rel="noopener">fontawesome.com/icons</a>. Leave empty for default tag icon.</p>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="cAddBtn"><i class="fas fa-plus"></i> Add Category</button>
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr>
+                    <th>#</th><th>Category</th><th>Icon</th><th>Videos</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="cTbody"><tr><td colspan="5"><div class="admin-spinner"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- GIFT CODES TAB -->
+    <div class="admin-sub-panel" id="adminTab-giftcodes">
+        <div class="admin-form-card">
+            <h3><i class="fas fa-plus-circle"></i> Create Gift Code</h3>
+            <div class="admin-form-row">
+                <div class="admin-form-group">
+                    <label for="gAmount">Coin Amount *</label>
+                    <input type="number" id="gAmount" class="admin-form-input" placeholder="100" min="1" max="100000">
+                </div>
+                <div class="admin-form-group">
+                    <label for="gPackage">Package Name</label>
+                    <input type="text" id="gPackage" class="admin-form-input" placeholder="Welcome Bonus" maxlength="60">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success btn-sm" id="gCreateBtn"><i class="fas fa-gift"></i> Generate Code</button>
+            </div>
+            <p class="hint"><i class="fas fa-info-circle"></i> Generated code is automatically copied to clipboard.</p>
+        </div>
+        <div class="admin-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="gSearch" placeholder="Search codes...">
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr>
+                    <th>Code</th><th>Amount</th><th>Package</th><th>Status</th><th>Created</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="gTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- USERS TAB -->
+    <div class="admin-sub-panel" id="adminTab-users">
+        <div class="admin-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="uSearch" placeholder="Search users by name or username...">
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr>
+                    <th>Name</th><th>Username</th><th>Balance</th><th>Favorites</th><th>Purchased</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="uTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="admin-sub-panel" id="adminTab-settings">
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-palette"></i> Appearance</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+                <span style="font-size:14px"><i class="fas fa-moon"></i> Dark Mode</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="theme-slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-key"></i> Change Admin Password</h3>
+            <div class="admin-form-group">
+                <label for="sCurrentPass">Current Password</label>
+                <input type="password" id="sCurrentPass" class="admin-form-input" placeholder="Current password" autocomplete="current-password">
+            </div>
+            <div class="admin-form-group">
+                <label for="sNewPass">New Password (min 6 chars)</label>
+                <input type="password" id="sNewPass" class="admin-form-input" placeholder="New password" autocomplete="new-password">
+            </div>
+            <div class="admin-form-group">
+                <label for="sConfirmPass">Confirm New Password</label>
+                <input type="password" id="sConfirmPass" class="admin-form-input" placeholder="Confirm new password" autocomplete="new-password">
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="sChangePassBtn"><i class="fas fa-save"></i> Update Password</button>
+            </div>
+        </div>
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-database"></i> Database Status</h3>
+            <p style="font-size:13px;color:var(--text-muted);line-height:1.7">
+                <strong style="color:var(--text-light)">Firebase:</strong> <span id="dbStatus">Checking...</span><br>
+                <strong style="color:var(--text-light)">Project:</strong> flix-net-bd1<br>
+                <strong style="color:var(--text-light)">Storage:</strong> flix-net-bd1.firebasestorage.app
+            </p>
+        </div>
+        <div class="admin-settings-section">
+            <h3><i class="fas fa-right-from-bracket"></i> Session</h3>
+            <div class="form-actions">
+                <button class="btn btn-danger btn-sm" id="sLogoutBtn"><i class="fas fa-right-from-bracket"></i> Logout Admin</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="admin-modal-overlay" id="confirmModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h3 id="confirmTitle">Confirm</h3>
+            <button class="admin-modal-close" id="confirmCloseBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="admin-modal-body">
+            <div class="admin-confirm-body">
+                <i class="fas fa-triangle-exclamation"></i>
+                <p id="confirmMsg">Are you sure?</p>
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button class="btn btn-ghost btn-sm" id="confirmCancelBtn">Cancel</button>
+            <button class="btn btn-danger btn-sm" id="confirmOkBtn">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- Balance Modal -->
+<div class="admin-modal-overlay" id="balanceModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h3>Edit User Balance</h3>
+            <button class="admin-modal-close" id="balCloseBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="admin-modal-body">
+            <p style="color:var(--text-muted);margin-bottom:8px;font-size:13px">User: <strong id="balUserName" style="color:var(--admin-accent)"></strong></p>
+            <p style="margin-bottom:14px;font-size:13px">Current Balance: <strong id="balCurrent" style="color:var(--warning)"></strong> coins</p>
+            <div class="admin-form-group">
+                <label for="balNewVal">New Balance</label>
+                <input type="number" id="balNewVal" class="admin-form-input" placeholder="e.g. 500" min="0" max="1000000">
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button class="btn btn-ghost btn-sm" id="balCancelBtn">Cancel</button>
+            <button class="btn btn-success btn-sm" id="balSaveBtn"><i class="fas fa-save"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div class="admin-modal-overlay" id="categoryModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h3 id="catModalTitle">Edit Category</h3>
+            <button class="admin-modal-close" id="catCloseBtn" aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="admin-modal-body">
+            <div class="admin-form-group">
+                <label for="catNameInput">Category Name *</label>
+                <input type="text" id="catNameInput" class="admin-form-input" placeholder="e.g. Horror" maxlength="40">
+            </div>
+            <div class="admin-form-group">
+                <label for="catIconInput">Icon (FontAwesome class)</label>
+                <input type="text" id="catIconInput" class="admin-form-input" placeholder="fas fa-ghost">
+                <p class="hint"><i class="fas fa-info-circle"></i> Browse icons at <a href="https://fontawesome.com/icons" target="_blank" rel="noopener">fontawesome.com/icons</a></p>
+            </div>
+            <div class="admin-form-group">
+                <label>Preview</label>
+                <div id="catPreview" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-color)">
+                    <i id="catPreviewIcon" class="fas fa-tag" style="color:var(--admin-accent);font-size:18px"></i>
+                    <span id="catPreviewName" style="font-weight:600">Category Name</span>
+                </div>
+            </div>
+        </div>
+        <div class="admin-modal-footer">
+            <button class="btn btn-ghost btn-sm" id="catCancelBtn">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="catSaveBtn"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="admin-toast-container" id="toastContainer"></div>
+
+<!-- Footer Nav -->
+<nav class="footer-nav">
+    <a class="nav-item active" data-atab="dashboard"><i class="fas fa-gauge-high"></i><span>Dashboard</span></a>
+    <a class="nav-item" data-atab="videos"><i class="fas fa-film"></i><span>Videos</span></a>
+    <a class="nav-item" data-atab="giftcodes"><i class="fas fa-gift"></i><span>Codes</span></a>
+    <a class="nav-item" data-atab="users"><i class="fas fa-users"></i><span>Users</span></a>
+    <a class="nav-item" data-atab="settings"><i class="fas fa-gear"></i><span>Settings</span></a>
+</nav>
+
+<script>
+/* ================================================================
+   ALL VIDEO HUB - ADMIN PANEL (Standalone, Production-Ready)
+   Features: Login, CRUD Videos, Categories, Gift Codes, Users, Settings
+   Mobile-first responsive design with dark/light theme
+   ================================================================ */
+(function(){
+'use strict';
+
+// ===================== FIREBASE CONFIG =====================
+const firebaseConfig = {
+    apiKey: "AIzaSyAgHJNZ0hPdK9QUaXdxKLTX9ku8szsmdFI",
+    authDomain: "flix-net-bd1.firebaseapp.com",
+    databaseURL: "https://flix-net-bd1-default-rtdb.firebaseio.com",
+    projectId: "flix-net-bd1",
+    storageBucket: "flix-net-bd1.firebasestorage.app",
+    messagingSenderId: "277577167146",
+    appId: "1:277577167146:web:4787722732514dd20aae53",
+    measurementId: "G-LWGY452H4L"
+};
+
+let db = null;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+} catch(e) {
+    console.error('Firebase init failed:', e);
+}
+
+// ===================== STATE =====================
+const DEFAULT_ADMIN_PASS = 'admin123';
+const SESSION_KEY = 'avh_admin_session';
+const SESSION_TTL = 1000 * 60 * 60 * 4; // 4 hours
+
+const state = {
+    authed: false,
+    adminPass: DEFAULT_ADMIN_PASS,
+    videos: {}, gifts: {}, users: {}, categories: [],
+    _listenersInit: false,
+    _confirmCallback: null,
+    _balanceUid: null,
+    _editCatIdx: null,
+    _currentTab: 'dashboard'
+};
+
+const $ = id => document.getElementById(id);
+
+// ===================== UTILS =====================
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function escAttr(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    return Promise.resolve(fallbackCopy(text));
+}
+function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+}
+
+function toast(msg, type) {
+    type = type || 'info';
+    const c = $('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'admin-toast ' + type;
+    const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle' };
+    t.innerHTML = '<i class="fas ' + (icons[type] || icons.info) + '"></i><span>' + esc(msg) + '</span>';
+    c.appendChild(t);
+    // Haptic feedback based on toast type
+    if (window.TMA && TMA.haptic) {
+        if (type === 'success') TMA.haptic.success();
+        else if (type === 'error') TMA.haptic.error();
+        else TMA.haptic.light();
+    }
+    setTimeout(() => {
+        t.style.transition = 'all .3s ease';
+        t.style.opacity = '0'; t.style.transform = 'translateX(40px)';
+        setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+    }, 3000);
+}
+
+function confirm2(title, msg, cb) {
+    $('confirmTitle').textContent = title;
+    $('confirmMsg').innerHTML = msg;
+    state._confirmCallback = cb;
+    const oldBtn = $('confirmOkBtn');
+    const newBtn = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+    newBtn.id = 'confirmOkBtn';
+    newBtn.addEventListener('click', () => {
+        closeModal('confirmModal');
+        if (typeof state._confirmCallback === 'function') state._confirmCallback();
+        state._confirmCallback = null;
+    });
+    openModal('confirmModal');
+}
+
+function openModal(id) { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+
+function fmtDate(ts) {
+    if (!ts) return 'N/A';
+    try { return new Date(ts).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }); }
+    catch(e) { return 'N/A'; }
+}
+
+// ===================== THEME =====================
+function initTheme() {
+    const saved = localStorage.getItem('avh_theme') || 'dark';
+    applyTheme(saved);
+    $('themeToggle').checked = saved === 'light';
+    updateThemeBtn(saved);
+}
+function applyTheme(theme) {
+    // Use TMA SDK Theme manager if available (syncs with Telegram header/bg color)
+    if (window.TMA && TMA.Theme) { TMA.Theme.apply(theme); return; }
+    if (theme === 'light') document.documentElement.classList.add('light-mode');
+    else document.documentElement.classList.remove('light-mode');
+}
+function updateThemeBtn(theme) {
+    const btn = $('themeToggleBtn');
+    btn.innerHTML = theme === 'light' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+}
+
+// ===================== SESSION (with TTL) =====================
+function saveSession() {
+    try {
+        const data = { ts: Date.now() };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    } catch(e) {}
+}
+function clearSession() {
+    try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+}
+function hasValidSession() {
+    try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !data.ts) return false;
+        if (Date.now() - data.ts > SESSION_TTL) { clearSession(); return false; }
+        return true;
+    } catch(e) { return false; }
+}
+
+// ===================== AUTH =====================
+// Browser-friendly: localStorage holds admin password as fallback / override.
+// Precedence: localStorage custom pass > Firebase settings/adminPassword > DEFAULT_ADMIN_PASS
+function getAdminPass(cb) {
+    // 1. Check localStorage first — fastest and works without Firebase
+    try {
+        const localPass = localStorage.getItem('avh_admin_pass');
+        if (localPass) {
+            state.adminPass = localPass;
+            cb(localPass);
+            return;
+        }
+    } catch(e) {}
+    // 2. Then try Firebase
+    if (!db) { cb(DEFAULT_ADMIN_PASS); return; }
+    db.ref('settings/adminPassword').once('value').then(snap => {
+        const p = snap.val();
+        state.adminPass = p || DEFAULT_ADMIN_PASS;
+        cb(state.adminPass);
+    }).catch(() => cb(DEFAULT_ADMIN_PASS));
+}
+
+function setAdminPass(newPass) {
+    // Save to BOTH localStorage (works in browser, instant) AND Firebase (multi-device sync)
+    try { localStorage.setItem('avh_admin_pass', newPass); } catch(e) {}
+    state.adminPass = newPass;
+    if (db) {
+        db.ref('settings/adminPassword').set(newPass).catch(e => {
+            console.warn('Firebase password save failed (using localStorage only):', e);
+        });
+    }
+}
+
+function doLogin() {
+    const pass = $('passInput').value;
+    if (!pass) { showError('Please enter a password'); return; }
+    getAdminPass(actualPass => {
+        if (pass === actualPass) {
+            state.authed = true;
+            hideError();
+            saveSession();
+            showDashboard();
+            toast('Welcome, Admin!', 'success');
+            initListeners();
+        } else {
+            showError('Incorrect password. Try again.');
+            $('passInput').value = '';
+            $('passInput').focus();
+        }
+    });
+}
+
+function logout() {
+    state.authed = false;
+    clearSession();
+    $('passInput').value = '';
+    $('loginScreen').style.display = 'flex';
+    $('dashboard').style.display = 'none';
+    $('backBtn').style.display = 'none';
+    toast('Logged out', 'info');
+}
+
+function showError(msg) {
+    const el = $('loginError');
+    el.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + esc(msg);
+    el.classList.add('show');
+}
+function hideError() { $('loginError').classList.remove('show'); }
+
+function showDashboard() {
+    $('loginScreen').style.display = 'none';
+    $('dashboard').style.display = 'block';
+    hidePreloader();
+    updateDbStatus();
+}
+
+function updateDbStatus() {
+    const el = $('dbStatus');
+    if (!el) return;
+    if (db) {
+        el.innerHTML = '<span style="color:var(--success);font-weight:600"><i class="fas fa-check-circle"></i> Connected</span>';
+    } else {
+        el.innerHTML = '<span style="color:var(--danger);font-weight:600"><i class="fas fa-times-circle"></i> Not connected</span>';
+    }
+}
+
+// ===================== TAB NAVIGATION =====================
+function switchTab(atab) {
+    state._currentTab = atab;
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.atab === atab));
+    document.querySelectorAll('.admin-sub-panel').forEach(p => p.classList.remove('active'));
+    const panel = $('adminTab-' + atab);
+    if (panel) panel.classList.add('active');
+    document.querySelectorAll('.nav-item[data-atab]').forEach(n => n.classList.toggle('active', n.dataset.atab === atab));
+    // Show back button only on non-dashboard tabs
+    $('backBtn').style.display = atab === 'dashboard' ? 'none' : 'flex';
+    // Sync native Telegram BackButton
+    if (window.TMA && TMA.BackButton) {
+        if (atab !== 'dashboard') {
+            TMA.BackButton.show(() => switchTab('dashboard'));
+        } else {
+            TMA.BackButton.hide();
+        }
+    }
+    // Manage Telegram MainButton based on tab
+    updateMainButtonForAdminTab(atab);
+    // Haptic feedback for tab change
+    if (window.TMA && TMA.haptic) TMA.haptic.selection();
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Show MainButton on form tabs so admin can save using Telegram's native button
+function updateMainButtonForAdminTab(atab) {
+    if (!window.TMA || !TMA.isTelegram) return;
+    if (atab === 'videos') {
+        const isEditing = !!$('vEditId').value;
+        TMA.MainButton.show(isEditing ? 'Update Video' : 'Save Video', () => {
+            saveVideo();
+        }, { color: '#6366f1' });
+    } else if (atab === 'categories') {
+        TMA.MainButton.show('Add Category', () => addCategory(), { color: '#6366f1' });
+    } else if (atab === 'giftcodes') {
+        TMA.MainButton.show('Generate Code', () => createGift(), { color: '#6366f1' });
+    } else if (atab === 'settings') {
+        TMA.MainButton.show('Logout', () => confirm2('Logout', 'Are you sure you want to logout?', logout), { color: '#e74c3c' });
+    } else {
+        TMA.MainButton.hide();
+    }
+}
+
+// ===================== FIREBASE LISTENERS =====================
+function initListeners() {
+    if (!db || state._listenersInit) return;
+    state._listenersInit = true;
+
+    db.ref('videos').on('value', snap => {
+        state.videos = snap.val() || {};
+        renderVideos(); updateStats(); renderCategories();
+    }, err => { console.error('Videos listener error:', err); toast('Videos load error', 'error'); });
+
+    db.ref('gifts').on('value', snap => {
+        state.gifts = snap.val() || {};
+        renderGifts(); updateStats();
+    }, err => { console.error('Gifts listener error:', err); });
+
+    db.ref('users').on('value', snap => {
+        state.users = snap.val() || {};
+        renderUsers(); updateStats();
+    }, err => { console.error('Users listener error:', err); });
+
+    db.ref('settings/categories').on('value', snap => {
+        const c = snap.val();
+        // Support BOTH legacy string[] format AND new {name, icon}[] format
+        const raw = Array.isArray(c) ? c : (c ? Object.values(c) : getDefaultCategories());
+        state.categories = raw.map(normalizeCategory).filter(cat => cat.name);
+        renderCategories();
+    }, () => { state.categories = getDefaultCategories(); renderCategories(); });
+}
+
+// Convert legacy string category OR partial object to full {name, icon} object
+function normalizeCategory(cat) {
+    if (typeof cat === 'string') return { name: cat, icon: '' };
+    if (cat && typeof cat === 'object') return { name: String(cat.name || ''), icon: String(cat.icon || '') };
+    return { name: '', icon: '' };
+}
+
+function getDefaultCategories() {
+    // Default categories with sensible icons
+    return [
+        { name: 'Hindi',       icon: 'fas fa-language' },
+        { name: 'Bangla',      icon: 'fas fa-language' },
+        { name: 'webseries',   icon: 'fas fa-tv' },
+        { name: 'action',      icon: 'fas fa-bolt' },
+        { name: 'Comedy',      icon: 'fas fa-laugh' },
+        { name: 'romantic',    icon: 'fas fa-heart' },
+        { name: 'horror',      icon: 'fas fa-ghost' },
+        { name: 'Anime',       icon: 'fas fa-dragon' },
+        { name: 'Cartoon',     icon: 'fas fa-child' },
+        { name: 'Indian',      icon: 'fas fa-flag' },
+        { name: 'viral-link',  icon: 'fas fa-fire' },
+        { name: 'Russian',     icon: 'fas fa-matryoshka' },
+        { name: 'BAZAARS',     icon: 'fas fa-store' },
+    ];
+}
+
+// ===================== STATS =====================
+function updateStats() {
+    const vKeys = Object.keys(state.videos);
+    const gKeys = Object.keys(state.gifts);
+    const uKeys = Object.keys(state.users);
+    let active = 0, totalCoins = 0;
+    gKeys.forEach(k => {
+        const g = state.gifts[k];
+        if (g && g.status === 'active') active++;
+        if (g && g.amount) totalCoins += Number(g.amount) || 0;
+    });
+    $('statVideos').textContent = vKeys.length;
+    $('statCodes').textContent = gKeys.length;
+    $('statActive').textContent = active;
+    $('statUsers').textContent = uKeys.length;
+    $('statCoins').textContent = totalCoins.toLocaleString();
+}
+
+// ===================== VIDEOS CRUD =====================
+function renderVideos() {
+    const tbody = $('vTbody');
+    const q = ($('vSearch').value || '').toLowerCase().trim();
+    const keys = Object.keys(state.videos);
+    if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-film"></i><p>No videos yet. Add your first video above.</p></div></td></tr>';
+        return;
+    }
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const v = state.videos[k];
+        return (v.name||'').toLowerCase().includes(q) ||
+               (v.tags||v.tag||'').toLowerCase().includes(q) ||
+               String(k).toLowerCase().includes(q);
+    });
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No videos match your search.</p></div></td></tr>';
+        return;
+    }
+    filtered.sort((a,b) => {
+        const va = state.videos[a], vb = state.videos[b];
+        return (vb.id || vb.createdAt || 0) - (va.id || va.createdAt || 0);
+    });
+    tbody.innerHTML = filtered.map(k => {
+        const v = state.videos[k];
+        const tags = (v.tags||v.tag||'').split(',').filter(Boolean).map(t => '<span class="admin-tag">' + esc(t.trim()) + '</span>').join('');
+        const thumb = v.thumbnail || v.img || '';
+        const thumbHtml = thumb
+            ? '<img src="' + escAttr(thumb) + '" class="admin-thumb-preview" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline\'"><i class="fas fa-image" style="color:var(--text-muted);display:none"></i>'
+            : '<i class="fas fa-image" style="color:var(--text-muted)"></i>';
+        const name = (v.name||'').length > 30 ? (v.name||'').substring(0,30) + '…' : (v.name||'');
+        return '<tr>' +
+            '<td title="' + escAttr(k) + '">' + esc(String(k).substring(0,8)) + '</td>' +
+            '<td>' + thumbHtml + '</td>' +
+            '<td>' + esc(name) + '</td>' +
+            '<td style="color:var(--warning);font-weight:600"><i class="fas fa-coins"></i> ' + (v.amount||0) + '</td>' +
+            '<td>' + (tags || '<span style="color:var(--text-muted)">—</span>') + '</td>' +
+            '<td><div class="act-cell">' +
+                '<button class="btn btn-ghost btn-sm a-edit-vid" data-id="' + escAttr(k) + '" title="Edit"><i class="fas fa-pen"></i></button>' +
+                '<button class="btn btn-danger btn-sm a-del-vid" data-id="' + escAttr(k) + '" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function saveVideo() {
+    const editId = $('vEditId').value;
+    const name = $('vName').value.trim();
+    const url = $('vUrl').value.trim();
+    const thumb = $('vThumb').value.trim();
+    const amount = parseInt($('vAmount').value, 10);
+    const duration = $('vDuration').value.trim();
+    const tags = $('vTags').value.trim();
+    const infoRaw = $('vInfo').value.trim();
+    if (!name) { toast('Video name is required', 'error'); $('vName').focus(); return; }
+    if (!url) { toast('Video URL is required', 'error'); $('vUrl').focus(); return; }
+    // Basic URL validation
+    try {
+        const u = new URL(url);
+        if (!['http:', 'https:'].includes(u.protocol)) throw new Error('bad protocol');
+    } catch (e) {
+        // Also accept relative URLs (1tera/... etc.)
+        if (!/^(https?:\/\/|\/|1tera\/|anime\/)/i.test(url)) {
+            toast('Please enter a valid URL (http:// or https://)', 'error');
+            $('vUrl').focus();
+            return;
+        }
+    }
+    const safeAmount = isNaN(amount) ? 0 : Math.max(0, Math.min(amount, 1000000));
+    if (amount < 0) { toast('Coin amount cannot be negative', 'error'); return; }
+    if (safeAmount > 1000000) { toast('Coin amount too large (max 1,000,000)', 'error'); return; }
+    const info = infoRaw ? infoRaw.split('\n').map(l => l.trim()).filter(Boolean) : [];
+    const data = { name, url, thumbnail: thumb, img: thumb, amount: safeAmount, duration, time: duration, tags, tag: tags, info, updatedAt: Date.now() };
+    if (!db) { toast('Database not connected', 'error'); return; }
+    if (editId) {
+        db.ref('videos/' + editId).update(data).then(() => {
+            toast('Video updated successfully', 'success');
+            resetVideoForm();
+        }).catch(e => toast('Error: ' + e.message, 'error'));
+    } else {
+        const newId = String(Date.now());
+        data.id = newId; data.createdAt = Date.now();
+        db.ref('videos/' + newId).set(data).then(() => {
+            toast('Video added successfully', 'success');
+            resetVideoForm();
+        }).catch(e => toast('Error: ' + e.message, 'error'));
+    }
+}
+
+function resetVideoForm() {
+    $('vEditId').value = '';
+    $('vName').value = ''; $('vUrl').value = ''; $('vThumb').value = '';
+    $('vAmount').value = ''; $('vDuration').value = ''; $('vTags').value = '';
+    $('vInfo').value = '';
+    $('videoFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Add New Video';
+    $('vSubmitText').textContent = 'Add Video';
+    $('vCancelBtn').style.display = 'none';
+}
+
+function videoActions(e) {
+    const editBtn = e.target.closest('.a-edit-vid');
+    const delBtn = e.target.closest('.a-del-vid');
+    if (editBtn) {
+        const id = editBtn.dataset.id;
+        const v = state.videos[id];
+        if (!v) { toast('Video not found', 'error'); return; }
+        $('vEditId').value = id;
+        $('vName').value = v.name || '';
+        $('vUrl').value = v.url || '';
+        $('vThumb').value = v.thumbnail || v.img || '';
+        $('vAmount').value = v.amount || 0;
+        $('vDuration').value = v.duration || v.time || '';
+        $('vTags').value = v.tags || v.tag || '';
+        $('vInfo').value = Array.isArray(v.info) ? v.info.join('\n') : (v.info || '');
+        $('videoFormTitle').innerHTML = '<i class="fas fa-pen"></i> Edit Video';
+        $('vSubmitText').textContent = 'Update Video';
+        $('vCancelBtn').style.display = 'inline-flex';
+        $('videoFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (delBtn) {
+        const id = delBtn.dataset.id;
+        const v = state.videos[id];
+        const name = v ? (v.name || id) : id;
+        confirm2('Delete Video', 'Delete <strong>' + esc(name) + '</strong>?<br>This action cannot be undone.', () => {
+            db.ref('videos/' + id).remove().then(() => toast('Video deleted', 'success'))
+              .catch(e => toast('Error: ' + e.message, 'error'));
+        });
+    }
+}
+
+// ===================== CATEGORIES =====================
+function renderCategories() {
+    const tbody = $('cTbody');
+    const cats = state.categories && state.categories.length ? state.categories : getDefaultCategories();
+    state.categories = cats;
+    if (!cats.length) {
+        tbody.innerHTML = '<tr><td colspan="5"><div class="admin-empty"><i class="fas fa-tags"></i><p>No categories yet.</p></div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = cats.map((cat, i) => {
+        const c = normalizeCategory(cat);
+        const count = Object.values(state.videos).filter(v => (v.tags||v.tag||'').toLowerCase().includes(c.name.toLowerCase())).length;
+        const iconClass = c.icon || 'fas fa-tag';
+        return '<tr>' +
+            '<td>' + (i+1) + '</td>' +
+            '<td style="font-weight:600">' + esc(c.name) + '</td>' +
+            '<td><i class="' + escAttr(iconClass) + '" style="color:var(--admin-accent);font-size:16px"></i></td>' +
+            '<td>' + count + '</td>' +
+            '<td><div class="act-cell">' +
+                '<button class="btn btn-primary btn-sm a-edit-cat" data-idx="' + i + '" title="Edit"><i class="fas fa-pen"></i></button>' +
+                '<button class="btn btn-danger btn-sm a-del-cat" data-idx="' + i + '" data-cat="' + escAttr(c.name) + '" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function addCategory() {
+    const name = $('cName').value.trim();
+    const icon = $('cIcon').value.trim();
+    if (!name) { toast('Category name is required', 'error'); return; }
+    // Check duplicate (case-insensitive)
+    const exists = state.categories.some(c => normalizeCategory(c).name.toLowerCase() === name.toLowerCase());
+    if (exists) { toast('Category already exists', 'error'); return; }
+    state.categories.push({ name: name, icon: icon });
+    if (db) {
+        db.ref('settings/categories').set(state.categories).then(() => {
+            toast('Category added: ' + name, 'success');
+            $('cName').value = ''; $('cIcon').value = '';
+        }).catch(e => toast('Error: ' + e.message, 'error'));
+    } else {
+        toast('Category added locally (no DB)', 'info');
+        $('cName').value = ''; $('cIcon').value = '';
+        renderCategories();
+    }
+}
+
+// Edit Category — open modal pre-filled with current values
+function openEditCategory(idx) {
+    const cat = normalizeCategory(state.categories[idx]);
+    if (!cat.name) { toast('Category not found', 'error'); return; }
+    state._editCatIdx = idx;
+    $('catModalTitle').textContent = 'Edit Category';
+    $('catNameInput').value = cat.name;
+    $('catIconInput').value = cat.icon || '';
+    updateCatPreview();
+    openModal('categoryModal');
+    setTimeout(() => $('catNameInput').focus(), 100);
+}
+
+function saveEditCategory() {
+    const idx = state._editCatIdx;
+    if (idx === undefined || idx === null || idx < 0 || idx >= state.categories.length) {
+        toast('No category selected', 'error');
+        closeModal('categoryModal');
+        return;
+    }
+    const newName = $('catNameInput').value.trim();
+    const newIcon = $('catIconInput').value.trim();
+    if (!newName) { toast('Category name is required', 'error'); return; }
+    // Check duplicate (case-insensitive, excluding current index)
+    const exists = state.categories.some((c, i) => i !== idx && normalizeCategory(c).name.toLowerCase() === newName.toLowerCase());
+    if (exists) { toast('Another category with this name already exists', 'error'); return; }
+    const oldName = normalizeCategory(state.categories[idx]).name;
+    state.categories[idx] = { name: newName, icon: newIcon };
+    if (db) {
+        db.ref('settings/categories').set(state.categories).then(() => {
+            // Optionally also update videos that had the old tag
+            if (oldName !== newName) {
+                updateVideoTagsForRename(oldName, newName);
+            }
+            toast('Category updated: ' + newName, 'success');
+            closeModal('categoryModal');
+            state._editCatIdx = null;
+        }).catch(e => toast('Error: ' + e.message, 'error'));
+    } else {
+        toast('Category updated locally (no DB)', 'info');
+        closeModal('categoryModal');
+        state._editCatIdx = null;
+        renderCategories();
+    }
+}
+
+// When renaming a category, optionally update video tags too
+function updateVideoTagsForRename(oldName, newName) {
+    if (!db) return;
+    const updates = {};
+    Object.entries(state.videos).forEach(([id, v]) => {
+        const tags = v.tags || v.tag || '';
+        if (typeof tags === 'string' && tags.toLowerCase().includes(oldName.toLowerCase())) {
+            // Replace tag (case-insensitive) in the string
+            const newTags = tags.replace(new RegExp(escapeRegex(oldName), 'gi'), newName);
+            updates['videos/' + id + '/tags'] = newTags;
+        } else if (Array.isArray(tags) && tags.some(t => String(t).toLowerCase() === oldName.toLowerCase())) {
+            const newTags = tags.map(t => String(t).toLowerCase() === oldName.toLowerCase() ? newName : t);
+            updates['videos/' + id + '/tags'] = newTags;
+        }
+    });
+    const count = Object.keys(updates).length;
+    if (count > 0) {
+        db.ref().update(updates).then(() => {
+            toast('Also updated tags on ' + (count) + ' video(s)', 'info');
+        }).catch(e => console.warn('Video tag update failed:', e));
+    }
+}
+
+function escapeRegex(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function updateCatPreview() {
+    const name = $('catNameInput').value.trim() || 'Category Name';
+    const icon = $('catIconInput').value.trim() || 'fas fa-tag';
+    $('catPreviewName').textContent = name;
+    // Sanitize icon class (only allow fa- classes)
+    const safeIcon = icon.replace(/[^a-z0-9\s-]/gi, '').trim();
+    $('catPreviewIcon').className = safeIcon || 'fas fa-tag';
+}
+
+function catActions(e) {
+    const editBtn = e.target.closest('.a-edit-cat');
+    const delBtn = e.target.closest('.a-del-cat');
+    if (editBtn) {
+        const idx = parseInt(editBtn.dataset.idx);
+        if (!isNaN(idx)) openEditCategory(idx);
+        return;
+    }
+    if (delBtn) {
+        const idx = parseInt(delBtn.dataset.idx);
+        const cat = delBtn.dataset.cat;
+        if (isNaN(idx) || idx < 0 || idx >= state.categories.length) return;
+        confirm2('Delete Category', 'Delete category <strong>' + esc(cat) + '</strong>?<br>Videos with this tag will not be deleted (but will no longer match this category).', () => {
+            state.categories.splice(idx, 1);
+            if (db) {
+                db.ref('settings/categories').set(state.categories).then(() => toast('Category deleted', 'success'))
+                  .catch(e => toast('Error: ' + e.message, 'error'));
+            } else { renderCategories(); toast('Category deleted locally', 'info'); }
+        });
+    }
+}
+
+// ===================== GIFT CODES =====================
+function renderGifts() {
+    const tbody = $('gTbody');
+    const q = ($('gSearch').value || '').toLowerCase().trim();
+    const keys = Object.keys(state.gifts);
+    if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-gift"></i><p>No gift codes yet.</p></div></td></tr>';
+        return;
+    }
+    keys.sort((a,b) => (state.gifts[b].createdAt||0) - (state.gifts[a].createdAt||0));
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const g = state.gifts[k];
+        return k.toLowerCase().includes(q) ||
+               (g.package||'').toLowerCase().includes(q) ||
+               (g.status||'').toLowerCase().includes(q);
+    });
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No codes match your search.</p></div></td></tr>';
+        return;
+    }
+    tbody.innerHTML = filtered.map(k => {
+        const g = state.gifts[k];
+        const badge = g.status === 'active'
+            ? '<span class="admin-badge admin-badge-active"><i class="fas fa-check"></i> Active</span>'
+            : '<span class="admin-badge admin-badge-used"><i class="fas fa-times"></i> Used</span>';
+        return '<tr>' +
+            '<td><span class="admin-code-cell" data-code="' + escAttr(k) + '" title="Click to copy">' + esc(k) + '</span></td>' +
+            '<td style="color:var(--warning);font-weight:600"><i class="fas fa-coins"></i> ' + (g.amount||0) + '</td>' +
+            '<td>' + esc(g.package || '—') + '</td>' +
+            '<td>' + badge + '</td>' +
+            '<td>' + fmtDate(g.createdAt) + '</td>' +
+            '<td><div class="act-cell"><button class="btn btn-danger btn-sm a-del-gift" data-code="' + escAttr(k) + '" title="Delete"><i class="fas fa-trash"></i></button></div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function createGift() {
+    const amount = parseInt($('gAmount').value, 10);
+    const pkg = $('gPackage').value.trim() || 'General';
+    if (isNaN(amount) || amount <= 0) { toast('Amount must be greater than 0', 'error'); return; }
+    if (amount > 100000) { toast('Amount too large (max 100000)', 'error'); return; }
+    if (!db) { toast('Database not connected', 'error'); return; }
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing chars (no 0/O, 1/I)
+    let code = 'GIFT-';
+    // Use crypto-safe random when available
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        const arr = new Uint8Array(8);
+        window.crypto.getRandomValues(arr);
+        for (let i = 0; i < 8; i++) code += chars[arr[i] % chars.length];
+    } else {
+        for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    // Ensure unique — if collision, append extra chars
+    if (state.gifts[code]) {
+        const extra = window.crypto && window.crypto.getRandomValues
+            ? (() => { const a = new Uint8Array(4); window.crypto.getRandomValues(a); let s = ''; for (let i = 0; i < 4; i++) s += chars[a[i] % chars.length]; return s; })()
+            : (() => { let s = ''; for (let i = 0; i < 4; i++) s += chars.charAt(Math.floor(Math.random() * chars.length)); return s; })();
+        code += extra;
+    }
+    db.ref('gifts/' + code).set({ amount, package: pkg, status: 'active', createdAt: Date.now() }).then(() => {
+        toast('Code created: ' + code, 'success');
+        copyToClipboard(code).then(() => toast('Code copied to clipboard', 'info'));
+        $('gAmount').value = ''; $('gPackage').value = '';
+    }).catch(e => toast('Error: ' + e.message, 'error'));
+}
+
+function giftActions(e) {
+    const copyEl = e.target.closest('.admin-code-cell');
+    if (copyEl) {
+        copyToClipboard(copyEl.dataset.code).then(() => toast('Code copied: ' + copyEl.dataset.code, 'success'));
+        return;
+    }
+    const delBtn = e.target.closest('.a-del-gift');
+    if (delBtn) {
+        const code = delBtn.dataset.code;
+        confirm2('Delete Gift Code', 'Delete code <strong>' + esc(code) + '</strong>?<br>This cannot be undone.', () => {
+            db.ref('gifts/' + code).remove().then(() => toast('Code deleted', 'success'))
+              .catch(e => toast('Error: ' + e.message, 'error'));
+        });
+    }
+}
+
+// ===================== USERS =====================
+function renderUsers() {
+    const tbody = $('uTbody');
+    const q = ($('uSearch').value || '').toLowerCase().trim();
+    const keys = Object.keys(state.users);
+    if (!keys.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-users"></i><p>No users registered yet.</p></div></td></tr>';
+        return;
+    }
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const u = state.users[k];
+        return (u.firstName||u.name||'').toLowerCase().includes(q) ||
+               (u.username||'').toLowerCase().includes(q) ||
+               String(k).toLowerCase().includes(q);
+    });
+    if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No users match your search.</p></div></td></tr>';
+        return;
+    }
+    filtered.sort((a,b) => {
+        const ua = state.users[a], ub = state.users[b];
+        return (ub.createdAt||0) - (ua.createdAt||0);
+    });
+    tbody.innerHTML = filtered.map(k => {
+        const u = state.users[k];
+        const name = u.firstName ? (u.firstName + ' ' + (u.lastName||'')).trim() : (u.name || 'User');
+        const username = u.username ? '@' + u.username : '—';
+        const favCount = Array.isArray(u.favorites) ? u.favorites.length : (u.favorites ? Object.keys(u.favorites).length : 0);
+        const purchCount = Array.isArray(u.purchased) ? u.purchased.length : (u.purchased ? Object.keys(u.purchased).length : 0);
+        return '<tr>' +
+            '<td style="font-weight:600">' + esc(name) + '</td>' +
+            '<td>' + esc(username) + '</td>' +
+            '<td style="color:var(--warning);font-weight:600"><i class="fas fa-coins"></i> ' + (u.balance||0) + '</td>' +
+            '<td>' + favCount + '</td>' +
+            '<td>' + purchCount + '</td>' +
+            '<td><div class="act-cell">' +
+                '<button class="btn btn-ghost btn-sm a-edit-bal" data-uid="' + escAttr(k) + '" title="Edit Balance"><i class="fas fa-coins"></i></button>' +
+                '<button class="btn btn-danger btn-sm a-del-user" data-uid="' + escAttr(k) + '" title="Delete User"><i class="fas fa-trash"></i></button>' +
+            '</div></td>' +
+        '</tr>';
+    }).join('');
+}
+
+function userActions(e) {
+    const editBtn = e.target.closest('.a-edit-bal');
+    const delBtn = e.target.closest('.a-del-user');
+    if (editBtn) {
+        const uid = editBtn.dataset.uid;
+        const u = state.users[uid];
+        if (!u) { toast('User not found', 'error'); return; }
+        state._balanceUid = uid;
+        const name = u.firstName ? (u.firstName + ' ' + (u.lastName||'')).trim() : (u.name || uid);
+        $('balUserName').textContent = name;
+        $('balCurrent').textContent = u.balance || 0;
+        $('balNewVal').value = u.balance || 0;
+        openModal('balanceModal');
+        setTimeout(() => $('balNewVal').focus(), 100);
+    }
+    if (delBtn) {
+        const uid = delBtn.dataset.uid;
+        const u = state.users[uid];
+        const name = u ? (u.firstName || u.name || uid) : uid;
+        confirm2('Delete User', 'Delete user <strong>' + esc(name) + '</strong>?<br>All their data will be lost. This cannot be undone.', () => {
+            db.ref('users/' + uid).remove().then(() => toast('User deleted', 'success'))
+              .catch(e => toast('Error: ' + e.message, 'error'));
+        });
+    }
+}
+
+function saveBalance() {
+    if (!state._balanceUid) return;
+    const newBal = parseInt($('balNewVal').value);
+    if (isNaN(newBal) || newBal < 0) { toast('Invalid amount', 'error'); return; }
+    if (newBal > 1000000) { toast('Amount too large', 'error'); return; }
+    db.ref('users/' + state._balanceUid + '/balance').set(newBal).then(() => {
+        toast('Balance updated to ' + newBal + ' coins', 'success');
+        closeModal('balanceModal');
+        state._balanceUid = null;
+    }).catch(e => toast('Error: ' + e.message, 'error'));
+}
+
+// ===================== SETTINGS =====================
+function changePass() {
+    const cur = $('sCurrentPass').value;
+    const newP = $('sNewPass').value;
+    const conf = $('sConfirmPass').value;
+    if (!cur) { toast('Enter current password', 'error'); return; }
+    if (cur !== state.adminPass) { toast('Current password is incorrect', 'error'); return; }
+    if (newP.length < 6) { toast('New password must be at least 6 characters', 'error'); return; }
+    if (newP !== conf) { toast('Passwords do not match', 'error'); return; }
+    // Use new helper that saves to BOTH localStorage AND Firebase
+    setAdminPass(newP);
+    toast('Password updated successfully', 'success');
+    $('sCurrentPass').value = ''; $('sNewPass').value = ''; $('sConfirmPass').value = '';
+}
+
+// ===================== SEED DEMO DATA =====================
+// One-click setup: seeds 10 categories, 30 demo videos (3 per category),
+// 2 demo users, and sets the admin password to 'admin123'.
+function seedDemoData() {
+    if (!db) { toast('Database not connected', 'error'); return; }
+
+    confirm2('Seed Demo Data',
+        'This will ADD the following to Firebase:<br><br>' +
+        '<ul style="text-align:left;display:inline-block;padding-left:20px;font-size:13px;line-height:1.8">' +
+        '<li><strong>10 categories</strong> (Hindi, Bangla, Action, Comedy, Romantic, Horror, Anime, Cartoon, Web Series, Viral)</li>' +
+        '<li><strong>30 demo videos</strong> (3 per category — public sample MP4s)</li>' +
+        '<li><strong>2 demo users</strong> with balance &amp; sample data</li>' +
+        '<li><strong>Admin password</strong> set to <code>admin123</code></li>' +
+        '</ul><br>' +
+        '<span style="color:var(--warning);font-size:12px"><i class="fas fa-exclamation-triangle"></i> Use only on a fresh database. Existing data with matching keys will be overwritten.</span>',
+        function() {
+            const btn = $('seedDataBtn');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Seeding...';
+            if (window.TMA && TMA.haptic) TMA.haptic.medium();
+
+            // Build all seed data
+            const updates = {};
+            const now = Date.now();
+
+            // 1) Categories
+            const categories = [
+                { name: 'Hindi',      icon: 'fas fa-language' },
+                { name: 'Bangla',     icon: 'fas fa-language' },
+                { name: 'Action',     icon: 'fas fa-bolt' },
+                { name: 'Comedy',     icon: 'fas fa-laugh' },
+                { name: 'Romantic',   icon: 'fas fa-heart' },
+                { name: 'Horror',     icon: 'fas fa-ghost' },
+                { name: 'Anime',      icon: 'fas fa-dragon' },
+                { name: 'Cartoon',    icon: 'fas fa-child' },
+                { name: 'Web Series', icon: 'fas fa-tv' },
+                { name: 'Viral',      icon: 'fas fa-fire' }
+            ];
+            updates['settings/categories'] = categories;
+
+            // 2) Admin password
+            updates['settings/adminPassword'] = 'admin123';
+
+            // 3) Videos — 3 per category (30 total)
+            // Use Google's public sample MP4s (cycled) + picsum.photos thumbnails
+            const sampleVideos = [
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4'
+            ];
+            const movieNames = {
+                'Hindi':      ['Dilwale Dulhania', 'Kabhi Khushi Kabhie Gham', '3 Idiots'],
+                'Bangla':     ['Jongli', 'Priya Amar Priya', 'Bishwajit'],
+                'Action':     ['Mad Max: Fury Road', 'John Wick', 'Die Hard'],
+                'Comedy':     ['The Hangover', 'Dumb and Dumber', 'Superbad'],
+                'Romantic':   ['The Notebook', 'Titanic', 'La La Land'],
+                'Horror':     ['The Conjuring', 'Hereditary', 'A Quiet Place'],
+                'Anime':      ['Naruto Shippuden', 'One Piece', 'Attack on Titan'],
+                'Cartoon':    ['Tom & Jerry', 'SpongeBob', 'Adventure Time'],
+                'Web Series': ['Stranger Things', 'Breaking Bad', 'Money Heist'],
+                'Viral':      ['Trending Clip 01', 'Trending Clip 02', 'Trending Clip 03']
+            };
+            const durations = ['00:10:00', '00:15:30', '00:12:45', '00:08:20', '00:20:15', '00:05:30'];
+            let videoCounter = 0;
+            categories.forEach(function(cat) {
+                const names = movieNames[cat.name] || ['Demo Video 1', 'Demo Video 2', 'Demo Video 3'];
+                for (var i = 0; i < 3; i++) {
+                    videoCounter++;
+                    var vidId = String(now + videoCounter);
+                    var url = sampleVideos[(videoCounter - 1) % sampleVideos.length];
+                    var thumb = 'https://picsum.photos/seed/' + cat.name.toLowerCase().replace(/\s+/g, '') + i + '/320/180';
+                    var amount = (videoCounter % 5) + 1; // 1-5 coins
+                    updates['videos/' + vidId] = {
+                        id: vidId,
+                        name: names[i] || (cat.name + ' Video ' + (i + 1)),
+                        url: url,
+                        img: thumb,
+                        thumbnail: thumb,
+                        amount: amount,
+                        time: durations[i % durations.length],
+                        duration: durations[i % durations.length],
+                        tag: cat.name,
+                        tags: cat.name,
+                        info: [
+                            'Sample demo video for the "' + cat.name + '" category.',
+                            'This is auto-generated seed data. Replace it with real content via the Videos tab.',
+                            'Category: ' + cat.name + ' | Cost: ' + amount + ' coins'
+                        ],
+                        createdAt: now + videoCounter
+                    };
+                }
+            });
+
+            // 4) Users — 2 demo users
+            updates['users/demo_user_1'] = {
+                id: 'demo_user_1',
+                firstName: 'Demo',
+                lastName: 'User',
+                username: 'demouser',
+                photoUrl: '',
+                balance: 100,
+                purchased: [],
+                favorites: [],
+                lastCheckIn: null,
+                streak: 0,
+                adWatchedToday: 0,
+                lastAdDate: null,
+                transactions: [
+                    { type: 'earn', title: 'Welcome bonus', amount: 100, time: new Date().toISOString() }
+                ],
+                giftHistory: [],
+                createdAt: now
+            };
+            updates['users/demo_user_2'] = {
+                id: 'demo_user_2',
+                firstName: 'Test',
+                lastName: 'User',
+                username: 'testuser',
+                photoUrl: '',
+                balance: 50,
+                purchased: [],
+                favorites: [],
+                lastCheckIn: null,
+                streak: 0,
+                adWatchedToday: 0,
+                lastAdDate: null,
+                transactions: [
+                    { type: 'earn', title: 'Welcome bonus', amount: 50, time: new Date().toISOString() }
+                ],
+                giftHistory: [],
+                createdAt: now
+            };
+
+            // Push everything to Firebase in a single atomic update
+            db.ref().update(updates).then(function() {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                state.adminPass = 'admin123';
+                try { localStorage.setItem('avh_admin_pass', 'admin123'); } catch (e) {}
+                toast('Demo data seeded! 10 categories, 30 videos, 2 users, password = admin123', 'success');
+                if (window.TMA && TMA.haptic) TMA.haptic.success();
+                // Re-render admin views to show the new data
+                renderCategories();
+                renderVideos();
+                renderUsers();
+                updateStats();
+            }).catch(function(err) {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                toast('Seed failed: ' + err.message, 'error');
+                if (window.TMA && TMA.haptic) TMA.haptic.error();
+                console.error('Seed error:', err);
+            });
+        });
+}
+
+// ===================== PRELOADER =====================
+function hidePreloader() {
+    const p = $('preloader');
+    p.classList.add('fade-out');
+    setTimeout(() => { p.style.display = 'none'; }, 500);
+}
+
+// ===================== EVENT BINDINGS =====================
+function bindEvents() {
+    // Login
+    $('loginBtn').addEventListener('click', doLogin);
+    $('passInput').addEventListener('keyup', e => { if (e.key === 'Enter') doLogin(); });
+    $('passInput').addEventListener('input', hideError);
+
+    // Tabs (top tabs)
+    $('adminTabs').addEventListener('click', e => {
+        const tab = e.target.closest('.admin-tab');
+        if (tab) switchTab(tab.dataset.atab);
+    });
+    // Footer nav
+    document.querySelectorAll('.nav-item[data-atab]').forEach(n => {
+        n.addEventListener('click', e => { e.preventDefault(); switchTab(n.dataset.atab); });
+    });
+    // Back button -> dashboard
+    $('backBtn').addEventListener('click', () => switchTab('dashboard'));
+
+    // Quick actions
+    document.querySelectorAll('[data-quick]').forEach(b => {
+        b.addEventListener('click', () => switchTab(b.dataset.quick));
+    });
+
+    // Listen for native Telegram BackButton presses via TMA Bootstrap
+    // (TMA Bootstrap calls TMABackHandler if set, otherwise history.back())
+    // We provide a custom handler that returns to dashboard if not on dashboard
+    window.TMABackHandler = function() {
+        if (state._currentTab && state._currentTab !== 'dashboard') {
+            switchTab('dashboard');
+            return false; // don't proceed with history.back()
+        }
+        // Otherwise go back to main app
+        window.location.href = 'index.html';
+        return false;
+    };
+
+    // Videos
+    $('vSubmitBtn').addEventListener('click', saveVideo);
+    $('vCancelBtn').addEventListener('click', resetVideoForm);
+    $('vSearch').addEventListener('input', renderVideos);
+    $('vTbody').addEventListener('click', videoActions);
+
+    // Categories
+    $('cAddBtn').addEventListener('click', addCategory);
+    $('cTbody').addEventListener('click', catActions);
+
+    // Gifts
+    $('gCreateBtn').addEventListener('click', createGift);
+    $('gSearch').addEventListener('input', renderGifts);
+    $('gTbody').addEventListener('click', giftActions);
+
+    // Users
+    $('uSearch').addEventListener('input', renderUsers);
+    $('uTbody').addEventListener('click', userActions);
+
+    // Settings
+    $('sChangePassBtn').addEventListener('click', changePass);
+    $('sLogoutBtn').addEventListener('click', () => confirm2('Logout', 'Are you sure you want to logout?', logout));
+
+    // Seed Demo Data
+    $('seedDataBtn').addEventListener('click', seedDemoData);
+
+    // Theme toggle (both header button and settings switch)
+    $('themeToggleBtn').addEventListener('click', () => {
+        const isLight = document.documentElement.classList.contains('light-mode');
+        const newTheme = isLight ? 'dark' : 'light';
+        applyTheme(newTheme);
+        localStorage.setItem('avh_theme', newTheme);
+        $('themeToggle').checked = newTheme === 'light';
+        updateThemeBtn(newTheme);
+    });
+    $('themeToggle').addEventListener('change', function() {
+        const newTheme = this.checked ? 'light' : 'dark';
+        applyTheme(newTheme);
+        localStorage.setItem('avh_theme', newTheme);
+        updateThemeBtn(newTheme);
+    });
+
+    // Modals
+    $('confirmCloseBtn').addEventListener('click', () => closeModal('confirmModal'));
+    $('confirmCancelBtn').addEventListener('click', () => closeModal('confirmModal'));
+    $('balCloseBtn').addEventListener('click', () => closeModal('balanceModal'));
+    $('balCancelBtn').addEventListener('click', () => closeModal('balanceModal'));
+    $('balSaveBtn').addEventListener('click', saveBalance);
+
+    // Category Edit Modal
+    $('catCloseBtn').addEventListener('click', () => closeModal('categoryModal'));
+    $('catCancelBtn').addEventListener('click', () => closeModal('categoryModal'));
+    $('catSaveBtn').addEventListener('click', saveEditCategory);
+    // Live preview update as user types
+    $('catNameInput').addEventListener('input', updateCatPreview);
+    $('catIconInput').addEventListener('input', updateCatPreview);
+    // Enter key in category modal saves
+    $('catNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('catIconInput').focus(); });
+    $('catIconInput').addEventListener('keydown', e => { if (e.key === 'Enter') saveEditCategory(); });
+
+    // Close on overlay click
+    [$('confirmModal'), $('balanceModal'), $('categoryModal')].forEach(overlay => {
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+    });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            closeModal('confirmModal');
+            closeModal('balanceModal');
+            closeModal('categoryModal');
+        }
+    });
+}
+
+// ===================== INIT =====================
+function init() {
+    initTheme();
+    bindEvents();
+    // Try to restore session
+    if (hasValidSession()) {
+        state.authed = true;
+        getAdminPass(() => {
+            showDashboard();
+            initListeners();
+        });
+    } else {
+        hidePreloader();
+        $('loginScreen').style.display = 'flex';
+        $('dashboard').style.display = 'none';
+        setTimeout(() => $('passInput').focus(), 300);
+    }
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+})();
+</script>
+</body>
+</html>

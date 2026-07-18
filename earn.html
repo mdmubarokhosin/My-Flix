@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Coin System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Telegram Web App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary-color: #ff0000;
+            --primary-dark: #cc0000;
+            --secondary-color: #2c3e50;
+            --background-dark: #1a1a1a;
+            --background-darker: #111;
+            --text-light: #ecf0f1;
+            --text-muted: #bdc3c7;
+            --success-color: #2ecc71;
+            --error-color: #ff0000;
+            --warning-color: #f39c12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Preloader Styles */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-darker);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .preloader-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .preloader-animation {
+            display: flex;
+            gap: 15px;
+        }
+
+        .preloader-bar {
+            width: 12px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 6px;
+            animation: barPulse 1.5s infinite ease-in-out;
+        }
+
+        .preloader-bar:nth-child(1) { animation-delay: 0s; }
+        .preloader-bar:nth-child(2) { animation-delay: 0.2s; }
+        .preloader-bar:nth-child(3) { animation-delay: 0.4s; }
+        .preloader-bar:nth-child(4) { animation-delay: 0.6s; }
+
+        .preloader-text {
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+
+        @keyframes barPulse {
+            0%, 100% { transform: scaleY(0.6); }
+            50%      { transform: scaleY(1.2); }
+        }
+
+        /* Header Styles */
+        header {
+            background-color: var(--background-darker);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            color: var(--primary-color);
+        }
+
+        .balance-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--secondary-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .balance-container:hover {
+            transform: scale(1.05);
+        }
+
+        .balance-icon {
+            color: #f1c40f;
+        }
+
+        .balance-amount {
+            font-weight: bold;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            padding: 30px 0;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Earning Card Styles */
+        .earn-card {
+            background-color: var(--background-darker);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .earn-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .card-body {
+            margin-bottom: 15px;
+        }
+
+        .card-description {
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .terms-notice {
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .terms-notice i {
+            color: var(--primary-color);
+        }
+
+        .earn-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .earn-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .earn-button.disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        /* Daily Check-in Card */
+        .daily-card {
+            background-color: var(--background-darker);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .daily-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .daily-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .daily-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .daily-streak-container {
+            margin-bottom: 15px;
+        }
+
+        .streak-calendar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .day-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+
+        .day-icon.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .streak-text {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .daily-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .daily-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .daily-button.disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        /* History Card Styles */
+        .history-card {
+            background-color: var(--background-darker);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .history-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .history-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-type {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: var(--primary-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .history-details h4 {
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+
+        .history-details p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .history-amount {
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--background-darker);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification-icon {
+            font-size: 1.2rem;
+        }
+
+        .notification-success .notification-icon {
+            color: var(--success-color);
+        }
+
+        .notification-error .notification-icon {
+            color: var(--error-color);
+        }
+
+        .notification-warning .notification-icon {
+            color: var(--warning-color);
+        }
+
+        .notification-content {
+            font-size: 0.9rem;
+        }
+        
+         .modal-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-content">
+            <div class="preloader-animation">
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+            </div>
+            <div class="preloader-text">Loading System...</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-app" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <a href="index.html" style="color:inherit;text-decoration:none;display:flex;align-items:center;gap:10px">
+                            <i class="fas fa-arrow-left" style="font-size:1rem;color:var(--text-muted)"></i>
+                            <i class="fas fa-film"></i>
+                            <span>VideoCoins</span>
+                        </a>
+                    </div>
+                    <div class="balance-container" id="balanceContainer">
+                        <i class="fas fa-coins balance-icon"></i>
+                        <span class="balance-amount" id="balanceAmount">0</span>
+                        <span>Coins</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="main-content">
+                <div class="dashboard">
+                    <div>
+                        <!-- Daily Check-in Card -->
+                        <div class="daily-card">
+                            <div class="daily-header">
+                                <h3 class="daily-title">Daily Check-in</h3>
+                                <i class="fas fa-calendar-check daily-icon"></i>
+                            </div>
+                            <div class="daily-streak-container">
+                                <div class="streak-calendar" id="streakCalendar">
+                                    <!-- Calendar icons will be added here by JavaScript -->
+                                </div>
+
+                                <div class="streak-text">
+                                    <span id="dailyStreak">0 day streak</span>
+                                    <span id="dailyStatus">Not checked in today</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="dailyProgress" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <button class="daily-button" id="dailyButton">
+                                <i class="fas fa-calendar-day"></i>
+                                Check-in Today
+                            </button>
+                        </div>
+                        
+                        <!-- Earn Card -->
+                        <div class="earn-card">
+                            <div class="card-header">
+                                <h3 class="card-title">Earn Video Coins</h3>
+                                <i class="fas fa-ad card-icon"></i>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-description">
+                                    Watch ads to earn coins. Each completed ad view rewards you with 1 coin.
+                                </p>
+                                <div class="terms-notice">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>
+                                        <strong>Important:</strong> These coins are for entertainment purposes only and cannot be withdrawn.
+                                    </span>
+                                </div>
+                                <div class="terms-notice">
+                                    <i class="fas fa-clock"></i>
+                                    <span id="earningLimitNotice">
+                                        <strong>Earning Limit:</strong> You can earn up to 30 coins. After that, there is a 4-hour cooldown.
+                                    </span>
+                                </div>
+                            </div>
+                            <button class="earn-button" id="earnButton">
+                                <i class="fas fa-ad"></i>
+                                Watch Ad & Earn (<span id="earnCount">0</span>/30)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="history-card">
+                        <div class="history-header">
+                            <h3 class="history-title">Transaction History</h3>
+                            <i class="fas fa-history history-icon"></i>
+                        </div>
+                        <div class="history-list" id="historyList">
+                            <div class="history-empty" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                                <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                                <p>No transactions yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle notification-icon"></i>
+            <div class="notification-content">Notification message</div>
+        </div>
+    </div>
+    
+    <!-- Ad SDK -->
+    <script src='https://libtl.com/sdk.js' data-zone='9707633' data-sdk='show_9707633'></script>
+
+    <!-- Main Application JavaScript -->
+    <script>
+        // ===== Safe JSON parse helper =====
+        function safeJsonParse(str, fallback) {
+            try { return JSON.parse(str); }
+            catch (e) { return fallback; }
+        }
+
+        // ===== Safe number coercion =====
+        function safeInt(v, def) {
+            const n = parseInt(v, 10);
+            return isNaN(n) ? (def || 0) : n;
+        }
+
+        // Global variables
+        let balance = 0;
+        let transactionHistory = [];
+        const MAX_HISTORY_ITEMS = 50;
+        let dailyCheckIns = [];
+        let sessionAdWatches = 0;
+        const MAX_SESSION_ADS = 30;
+        const COOLDOWN_HOURS = 4;
+        let earningCooldownEnd = 0;
+        let cooldownInterval = null;
+
+        // DOM elements (guarded so they may be null in partial DOMs)
+        const preloader = document.querySelector('.preloader');
+        const mainApp = document.querySelector('.main-app');
+        const balanceAmount = document.getElementById('balanceAmount');
+        const historyList = document.getElementById('historyList');
+        const notification = document.getElementById('notification');
+        const dailyButton = document.getElementById('dailyButton');
+        const earnButton = document.getElementById('earnButton');
+        const earnCount = document.getElementById('earnCount');
+        const dailyStreak = document.getElementById('dailyStreak');
+        const dailyStatus = document.getElementById('dailyStatus');
+        const dailyProgress = document.getElementById('dailyProgress');
+        const streakCalendar = document.getElementById('streakCalendar');
+
+        // ===== Safe Telegram WebApp wrapper =====
+        const TelegramAPI = (function() {
+            try { return (window.Telegram && window.Telegram.WebApp) || null; }
+            catch (e) { return null; }
+        })();
+
+        function tgAlert(msg) {
+            if (TelegramAPI && typeof TelegramAPI.showAlert === 'function') {
+                try { TelegramAPI.showAlert(msg); return; } catch (e) {}
+            }
+            // Browser fallback
+            try { alert(msg); } catch (e) {}
+        }
+
+        function tgReady() {
+            if (TelegramAPI && typeof TelegramAPI.ready === 'function') {
+                try { TelegramAPI.ready(); } catch (e) {}
+            }
+        }
+
+        // Initialize the app
+        function initApp() {
+            // Initialize Telegram Web App (with safe fallback)
+            tgReady();
+
+            loadDataFromStorage();
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            updateDailyCheckInDisplay();
+            updateEarningsDisplay();
+            checkCooldown();
+
+            setTimeout(() => {
+                if (preloader) preloader.style.opacity = '0';
+                setTimeout(() => {
+                    if (preloader) preloader.style.display = 'none';
+                    if (mainApp) mainApp.style.display = 'block';
+                }, 500);
+            }, 1500);
+        }
+        
+        function loadDataFromStorage() {
+            try {
+                balance = safeInt(localStorage.getItem('userBalance'), 0);
+                transactionHistory = safeJsonParse(localStorage.getItem('transactionHistory'), []) || [];
+                if (!Array.isArray(transactionHistory)) transactionHistory = [];
+                dailyCheckIns = safeJsonParse(localStorage.getItem('dailyCheckIns'), []) || [];
+                if (!Array.isArray(dailyCheckIns)) dailyCheckIns = [];
+                sessionAdWatches = safeInt(localStorage.getItem('sessionAdWatches'), 0);
+                earningCooldownEnd = safeInt(localStorage.getItem('earningCooldownEnd'), 0);
+            } catch (e) {
+                console.warn('Failed to load data from localStorage:', e);
+                balance = 0; transactionHistory = []; dailyCheckIns = [];
+                sessionAdWatches = 0; earningCooldownEnd = 0;
+            }
+        }
+
+        function saveDataToStorage() {
+            try {
+                localStorage.setItem('userBalance', String(balance));
+                localStorage.setItem('transactionHistory', JSON.stringify(transactionHistory));
+                localStorage.setItem('dailyCheckIns', JSON.stringify(dailyCheckIns));
+                localStorage.setItem('sessionAdWatches', String(sessionAdWatches));
+                localStorage.setItem('earningCooldownEnd', String(earningCooldownEnd));
+            } catch (e) {
+                console.warn('Failed to save data to localStorage:', e);
+            }
+        }
+
+        function updateBalanceDisplay() {
+            if (balanceAmount) balanceAmount.textContent = balance;
+        }
+
+        function escHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = (s == null) ? '' : String(s);
+            return d.innerHTML;
+        }
+
+        function updateHistoryDisplay() {
+            if (!historyList) return;
+            if (!transactionHistory.length) {
+                historyList.innerHTML = `
+                    <div class="history-empty" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                        <i class="fas fa-history" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No transactions yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = '';
+            // Show most recent first (transactionHistory is oldest-first, so reverse a copy)
+            transactionHistory.slice().reverse().forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                historyItem.innerHTML = `
+                    <div class="history-info">
+                        <div class="history-type">
+                            <i class="fas ${item.type === 'earn' ? 'fa-plus' : 'fa-minus'}"></i>
+                        </div>
+                        <div class="history-details">
+                            <h4>${escHtml(item.description || '')}</h4>
+                            <p>${escHtml(formattedDate)}</p>
+                        </div>
+                    </div>
+                    <div class="history-amount">+${escHtml(item.amount)}</div>
+                `;
+                // Append (not prepend) since we already reversed the array above
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        function updateDailyCheckInDisplay() {
+            const today = new Date().toDateString();
+            const hasCheckedInToday = dailyCheckIns.some(d => {
+                try { return new Date(d.date).toDateString() === today; }
+                catch (e) { return false; }
+            });
+            
+            let streak = 0;
+            if (dailyCheckIns.length > 0) {
+                 const sortedCheckIns = [...dailyCheckIns].sort((a, b) => new Date(b.date) - new Date(a.date));
+                 let lastDate = new Date();
+                 if (!hasCheckedInToday) {
+                    lastDate.setDate(lastDate.getDate() - 1);
+                 }
+                 
+                 for (let i = 0; i < sortedCheckIns.length; i++) {
+                    const checkInDate = new Date(sortedCheckIns[i].date);
+                    if (isNaN(checkInDate.getTime())) continue;
+                    const diffTime = lastDate.getTime() - checkInDate.getTime();
+                    const diffDays = diffTime / (1000 * 3600 * 24);
+                    
+                    if (diffDays < 1.5) {
+                        streak++;
+                        lastDate = checkInDate;
+                    } else {
+                        break;
+                    }
+                 }
+            }
+            
+            updateCalendarIcons(streak);
+            if (dailyStreak) dailyStreak.textContent = `${streak} day${streak !== 1 ? 's' : ''} streak`;
+            if (dailyStatus) dailyStatus.textContent = hasCheckedInToday ? "Checked in today!" : "Not checked in today";
+            if (dailyProgress) dailyProgress.style.width = `${Math.min(100, (streak / 7) * 100)}%`;
+
+            if (dailyButton) {
+                if (hasCheckedInToday) {
+                    dailyButton.disabled = true;
+                    dailyButton.classList.add('disabled');
+                    dailyButton.innerHTML = `<i class="fas fa-check-circle"></i> Already Checked-in`;
+                } else {
+                    dailyButton.disabled = false;
+                    dailyButton.classList.remove('disabled');
+                    dailyButton.innerHTML = `<i class="fas fa-calendar-day"></i> Check-in Today`;
+                }
+            }
+        }
+        
+        function updateCalendarIcons(streak) {
+            if (!streakCalendar) return;
+            streakCalendar.innerHTML = '';
+            for (let i = 1; i <= 7; i++) {
+                const dayIcon = document.createElement('div');
+                dayIcon.className = 'day-icon';
+                if (i <= streak) {
+                    dayIcon.classList.add('active');
+                    dayIcon.innerHTML = `<i class="fas fa-check-circle"></i>`;
+                } else {
+                    dayIcon.innerHTML = `<i class="fas fa-calendar"></i>`;
+                }
+                streakCalendar.appendChild(dayIcon);
+            }
+        }
+
+        function updateEarningsDisplay() {
+            if (earnCount) earnCount.textContent = sessionAdWatches;
+            if (earnButton) {
+                earnButton.innerHTML = `<i class="fas fa-ad"></i> Watch Ad & Earn (${sessionAdWatches}/${MAX_SESSION_ADS})`;
+            }
+
+            if (sessionAdWatches >= MAX_SESSION_ADS) {
+                if (Date.now() < earningCooldownEnd) {
+                    // Cooldown is active, handled by checkCooldown
+                } else {
+                    sessionAdWatches = 0;
+                    earningCooldownEnd = 0;
+                    saveDataToStorage();
+                    updateEarningsDisplay();
+                }
+            } else {
+                if (earnButton) {
+                    earnButton.disabled = false;
+                    earnButton.classList.remove('disabled');
+                }
+            }
+        }
+        
+        function checkCooldown() {
+            if (cooldownInterval) { clearInterval(cooldownInterval); cooldownInterval = null; }
+
+            if (Date.now() < earningCooldownEnd) {
+                if (earnButton) {
+                    earnButton.disabled = true;
+                    earnButton.classList.add('disabled');
+                }
+                
+                cooldownInterval = setInterval(() => {
+                    const now = Date.now();
+                    const timeLeft = earningCooldownEnd - now;
+
+                    if (timeLeft <= 0) {
+                        clearInterval(cooldownInterval);
+                        cooldownInterval = null;
+                        sessionAdWatches = 0;
+                        earningCooldownEnd = 0;
+                        saveDataToStorage();
+                        if (earnButton) {
+                            earnButton.disabled = false;
+                            earnButton.classList.remove('disabled');
+                            earnButton.innerHTML = `<i class="fas fa-ad"></i> Watch Ad & Earn (${sessionAdWatches}/${MAX_SESSION_ADS})`;
+                        }
+                        showAppNotification('Cooldown finished! You can earn coins again.', 'check-circle', 'success');
+                    } else {
+                        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                        if (earnButton) {
+                            earnButton.innerHTML = `<i class="fas fa-clock"></i> Cooldown: ${hours}h ${minutes}m ${seconds}s`;
+                        }
+                    }
+                }, 1000);
+            } else {
+                if (sessionAdWatches >= MAX_SESSION_ADS) {
+                    sessionAdWatches = 0;
+                    earningCooldownEnd = 0;
+                    saveDataToStorage();
+                }
+                updateEarningsDisplay();
+            }
+        }
+        
+        function handleEarning() {
+            if (sessionAdWatches >= MAX_SESSION_ADS) {
+                showAppNotification(`You have reached the limit. Please wait for the cooldown.`, 'exclamation-circle', 'warning');
+                return;
+            }
+
+            if (earnButton) earnButton.disabled = true;
+
+            // Check if ad SDK function is available; use typeof guard to avoid ReferenceError
+            const adFn = (typeof window.show_9707633 === 'function') ? window.show_9707633 : null;
+
+            if (adFn) {
+                Promise.resolve(adFn()).then(() => {
+                    tgAlert('You have earned 1 coin!');
+                    
+                    balance += 1;
+                    sessionAdWatches += 1;
+
+                    addTransaction('earn', 1, 'Ad view reward');
+                    
+                    if (sessionAdWatches >= MAX_SESSION_ADS) {
+                        earningCooldownEnd = Date.now() + COOLDOWN_HOURS * 60 * 60 * 1000;
+                        checkCooldown();
+                    }
+                    
+                    saveDataToStorage();
+                    updateAllDisplays();
+                }).catch(() => {
+                    tgAlert('Ad was not completed.');
+                }).finally(() => {
+                    if (Date.now() > earningCooldownEnd && earnButton) {
+                        earnButton.disabled = false;
+                    }
+                });
+            } else {
+                // Ad SDK not loaded — fallback: still grant coin (demo mode)
+                balance += 1;
+                sessionAdWatches += 1;
+                addTransaction('earn', 1, 'Ad view reward (demo)');
+                if (sessionAdWatches >= MAX_SESSION_ADS) {
+                    earningCooldownEnd = Date.now() + COOLDOWN_HOURS * 60 * 60 * 1000;
+                    checkCooldown();
+                }
+                saveDataToStorage();
+                updateAllDisplays();
+                showAppNotification('Ad SDK unavailable — granted 1 demo coin.', 'info-circle', 'info');
+                if (earnButton) earnButton.disabled = false;
+            }
+        }
+        
+        function handleDailyCheckIn() {
+            const today = new Date().toDateString();
+            if (dailyCheckIns.some(d => {
+                try { return new Date(d.date).toDateString() === today; }
+                catch (e) { return false; }
+            })) {
+                showAppNotification('You have already checked in today', 'info-circle', 'warning');
+                return;
+            }
+            
+            if (dailyButton) dailyButton.disabled = true;
+
+            const adFn = (typeof window.show_9707633 === 'function') ? window.show_9707633 : null;
+
+            if (adFn) {
+                Promise.resolve(adFn()).then(() => {
+                    tgAlert('You have successfully checked in for today and earned 1 coin!');
+
+                    const todayDate = new Date();
+                    dailyCheckIns.push({ date: todayDate.toISOString(), timestamp: todayDate.getTime() });
+                    
+                    const coinsEarned = 1; 
+                    balance += coinsEarned;
+                    addTransaction('earn', coinsEarned, 'Daily check-in reward');
+                    
+                    saveDataToStorage();
+                    updateAllDisplays();
+                }).catch(() => {
+                    showAppNotification('Ad not completed. Daily check-in failed.', 'times-circle', 'error');
+                    if (dailyButton) dailyButton.disabled = false;
+                });
+            } else {
+                // Fallback when ad SDK is not loaded
+                const todayDate = new Date();
+                dailyCheckIns.push({ date: todayDate.toISOString(), timestamp: todayDate.getTime() });
+                const coinsEarned = 1;
+                balance += coinsEarned;
+                addTransaction('earn', coinsEarned, 'Daily check-in reward (demo)');
+                saveDataToStorage();
+                updateAllDisplays();
+                showAppNotification('Ad SDK unavailable — granted 1 demo coin.', 'info-circle', 'info');
+                if (dailyButton) dailyButton.disabled = false;
+            }
+        }
+
+        function addTransaction(type, amount, description) {
+            const newTransaction = {
+                type: String(type),
+                amount: safeInt(amount, 0),
+                description: String(description || ''),
+                timestamp: new Date().getTime()
+            };
+            transactionHistory.push(newTransaction);
+            if (transactionHistory.length > MAX_HISTORY_ITEMS) {
+                transactionHistory.shift();
+            }
+        }
+        
+        function updateAllDisplays() {
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            updateDailyCheckInDisplay();
+            updateEarningsDisplay();
+        }
+
+        function showAppNotification(message, icon, type) {
+            if (!notification) return;
+            const notificationIcon = notification.querySelector('.notification-icon');
+            const notificationContent = notification.querySelector('.notification-content');
+            if (!notificationIcon || !notificationContent) return;
+            // Sanitize icon class (only allow fa- classes)
+            const safeIcon = String(icon).replace(/[^a-z0-9-]/gi, '');
+            notificationIcon.className = `fas fa-${safeIcon} notification-icon`;
+            notificationContent.textContent = message;
+            notification.className = 'notification';
+            notification.classList.add(`notification-${type}`, 'show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+            if (earnButton) earnButton.addEventListener('click', handleEarning);
+            if (dailyButton) dailyButton.addEventListener('click', handleDailyCheckIn);
+        });
+
+        // Clean up cooldown interval when the page is unloaded
+        window.addEventListener('pagehide', () => {
+            if (cooldownInterval) { clearInterval(cooldownInterval); cooldownInterval = null; }
+        });
+    </script>
+    
+    <!-- Reliable Back Button Script -->
+    <script>
+        const style = document.createElement('style');
+        style.textContent = `
+      #reliableBackBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background-color: #ff0000;
+        color: white;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(231, 76, 60, 0.5);
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: all 0.2s ease;
+      }
+      
+      #reliableBackBtn:hover {
+        background-color: #c0392b;
+        transform: scale(1.05);
+      }
+      
+      #reliableBackBtn:active {
+        transform: scale(0.95);
+      }
+      
+      #reliableBackBtn.loading {
+        pointer-events: none;
+        opacity: 0.8;
+      }
+      
+      #reliableBackBtn.loading i {
+        animation: spin 0.6s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+        document.head.appendChild(style);
+
+        if (!document.getElementById('reliableBackBtn')) {
+            const button = document.createElement('button');
+            button.id = 'reliableBackBtn';
+            button.setAttribute('aria-label', 'Go back to home');
+            button.innerHTML = '<i class="fas fa-arrow-left"></i>';
+            document.body.appendChild(button);
+
+            let isNavigating = false;
+            function handleNavigation() {
+                if (isNavigating) return;
+                isNavigating = true;
+                button.classList.add('loading');
+                button.innerHTML = '<i class="fas fa-spinner"></i>';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 100);
+            }
+
+            button.addEventListener('click', handleNavigation);
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent click event firing as well
+                handleNavigation();
+            }, { passive: false });
+        }
+    </script>
+
+</body>
+</html>

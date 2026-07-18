@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Season Episodes List</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 16px;
+        }
+        h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .ep-btn {
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 15px;
+            padding: 14px 20px;
+            margin: 6px 0;
+            border: 1px solid #333;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .ep-btn:hover { background: #ff0000; border-color: #ff0000; }
+        .ep-btn:active { transform: scale(0.98); }
+        .ep-btn i { color: #ff4444; }
+        .ep-btn:hover i { color: #fff; }
+        .back-link {
+            margin-top: 16px;
+            color: #888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-tv" style="color:#ff4444"></i> Season Episodes</h2>
+        <button class="ep-btn" onclick="openEpisode('ep1')"><i class="fas fa-play-circle"></i> Episode 01 (25m:39s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep2')"><i class="fas fa-play-circle"></i> Episode 02 (29m:58s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep3')"><i class="fas fa-play-circle"></i> Episode 03 (24m:01s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep4')"><i class="fas fa-play-circle"></i> Episode 04 (26m:22s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep5')"><i class="fas fa-play-circle"></i> Episode 05 (24m:45s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep6')"><i class="fas fa-play-circle"></i> Episode 06 (17m:58s)</button>
+        <button class="ep-btn" onclick="openEpisode('ep7')"><i class="fas fa-play-circle"></i> Episode 07 (21m:32s)</button>
+        <a class="back-link" href="../index.html"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+
+    <script>
+        // TeraBox direct URLs
+        const links = {
+            ep1: "https://1024terabox.com/s/1Nkr2fqK58Vrf_HI4eJnjnQ",
+            ep2: "https://1024terabox.com/s/18lnJ37LRGcKjMN46zKI3hQ",
+            ep3: "https://1024terabox.com/s/11bMA6iQt8mcGsMVEe3pnBA",
+            ep4: "https://1024terabox.com/s/1WnquakoQzRov0UnOtxqqJA",
+            ep5: "https://1024terabox.com/s/1bybnv5z2PsM_XCJqIA6rzg",
+            ep6: "https://1024terabox.com/s/1xOQmbn1E075yM8HfdqsJfA",
+            ep7: "https://1024terabox.com/s/11SZNq7EWxeoXekCg0vOr6g"
+        };
+
+        function openEpisode(id) {
+            const teraUrl = links[id];
+            if (!teraUrl) return;
+            // Use relative path to the tv.html player
+            const playerUrl = '../1tera/tv.html?q=' + encodeURIComponent(teraUrl);
+            window.location.href = playerUrl;
+        }
+    </script>
+</body>
+</html>

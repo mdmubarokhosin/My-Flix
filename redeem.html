@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Coin System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+:root {
+    --primary-color: #FF0505;
+    --primary-dark: #ff0000;
+    --secondary-color: #2c3e50;
+    --accent-color: #ff0000;
+    --background-dark: #1a1a1a;
+    --background-darker: #111;
+    --background-light: #2d3436;
+    --text-light: #ecf0f1;
+    --text-muted: #bdc3c7;
+    --success-color: #2ecc71;
+    --error-color: #ff0000;
+    --warning-color: #f39c12;
+    --info-color: #3498db;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: var(--background-dark);
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Preloader Styles */
+.preloader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--background-darker);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+.preloader-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.preloader-animation {
+    display: flex;
+    gap: 15px;
+}
+
+.preloader-bar {
+    width: 12px;
+    height: 60px;
+    background: var(--primary-color);
+    border-radius: 6px;
+    animation: barPulse 1.5s infinite ease-in-out;
+}
+
+.preloader-bar:nth-child(1) { animation-delay: 0s; }
+.preloader-bar:nth-child(2) { animation-delay: 0.2s; }
+.preloader-bar:nth-child(3) { animation-delay: 0.4s; }
+.preloader-bar:nth-child(4) { animation-delay: 0.6s; }
+
+.preloader-text {
+    font-size: 1.2rem;
+    color: var(--text-light);
+    font-weight: 300;
+}
+
+@keyframes barPulse {
+    0%, 100% { transform: scaleY(0.6); }
+    50%      { transform: scaleY(1.2); }
+}
+
+/* Header Styles */
+header {
+    background-color: var(--background-darker);
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logo i {
+    color: var(--primary-color);
+}
+
+.balance-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--secondary-color);
+    padding: 8px 15px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.balance-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.balance-icon {
+    color: #f1c40f;
+}
+
+.balance-amount {
+    font-weight: bold;
+}
+
+/* Main Content */
+.main-content {
+    padding: 30px 0;
+    display: grid;
+    gap: 30px;
+}
+
+/* Gift Section */
+.gift-section {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title i {
+    color: var(--primary-color);
+}
+
+.gift-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 20px;
+}
+
+.gift-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+.gift-tab.active {
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.gift-tab:hover:not(.active) {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+}
+
+.gift-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.gift-content.active {
+    display: block;
+}
+
+.gift-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.gift-input {
+    flex: 1;
+    padding: 12px 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: var(--text-light);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.gift-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(255, 71, 87, 0.2);
+}
+
+.gift-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gift-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.3);
+}
+
+.gift-button:active {
+    transform: translateY(0);
+}
+
+.send-gift-form {
+    display: grid;
+    gap: 15px;
+}
+
+.form-row {
+    display: grid;
+    gap: 10px;
+}
+
+.form-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.gift-info {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Buy Coins Section */
+.buy-coins-section {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coin-plans {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.coin-plan {
+    background-color: var(--background-light);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.coin-plan:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    border-color: var(--primary-color);
+}
+
+.plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.plan-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.plan-coins {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f1c40f;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.plan-coins i {
+    color: #f1c40f;
+}
+
+.plan-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.plan-button:hover {
+    background-color: var(--primary-dark);
+}
+
+.custom-plan {
+    margin-top: 20px;
+    background-color: var(--background-light);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.custom-plan-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.custom-plan-form {
+    display: grid;
+    gap: 10px;
+}
+
+.custom-plan-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.custom-plan-label {
+    font-weight: 500;
+}
+
+.custom-plan-input {
+    padding: 10px 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: var(--text-light);
+    font-size: 1rem;
+}
+
+.custom-plan-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.custom-plan-result {
+    font-weight: 600;
+    color: var(--primary-color);
+    text-align: center;
+    padding: 10px;
+    background-color: rgba(255, 71, 87, 0.1);
+    border-radius: 5px;
+}
+
+.custom-plan-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.custom-plan-button:hover {
+    background-color: var(--primary-dark);
+}
+
+.warning-box {
+    background-color: rgba(231, 76, 60, 0.1);
+    border-left: 4px solid var(--error-color);
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.warning-box-title {
+    font-weight: 600;
+    color: var(--error-color);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.warning-box-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* History Card */
+.history-card {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.history-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.history-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--background-light);
+}
+
+.history-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: var(--background-light);
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 6px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.history-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.history-type {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--primary-dark);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.history-details h4 {
+    font-size: 0.9rem;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+
+.history-details p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.history-amount {
+    font-weight: bold;
+}
+
+.history-amount.positive {
+    color: var(--success-color);
+}
+
+.history-amount.negative {
+    color: var(--error-color);
+}
+
+.history-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+}
+
+.history-empty i {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+/* Gift Code Modal */
+.gift-code-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.gift-code-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.gift-code-content {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 25px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: modalFadeIn 0.3s ease;
+}
+
+.gift-code-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.gift-code-close:hover {
+    color: var(--text-light);
+}
+
+.gift-code-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.gift-code-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.gift-code-value {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 1.2rem;
+    text-align: center;
+    margin: 20px 0;
+    word-break: break-all;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.gift-code-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.gift-code-button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 5px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.gift-code-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.gift-code-button:active {
+    transform: translateY(0);
+}
+
+.gift-code-copy {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.gift-code-copy:hover {
+    background-color: var(--primary-dark);
+}
+
+.gift-code-close-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.gift-code-close-btn:hover {
+    background-color: #34495e;
+}
+
+/* Success Modal */
+.success-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.success-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.success-content {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: modalFadeIn 0.3s ease;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: var(--success-color);
+    margin-bottom: 15px;
+    animation: bounce 0.5s ease;
+}
+
+.success-title {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: var(--success-color);
+}
+
+.success-message {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.success-button {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.success-button:hover {
+    background-color: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+}
+
+/* Purchase Modal */
+.purchase-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.purchase-modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.purchase-content {
+    background-color: var(--background-darker);
+    border-radius: 10px;
+    padding: 25px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: modalFadeIn 0.3s ease;
+}
+
+.purchase-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.purchase-close:hover {
+    color: var(--text-light);
+}
+
+.purchase-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.purchase-plan {
+    background-color: var(--background-light);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.purchase-plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.purchase-plan-name {
+    font-weight: 600;
+}
+
+.purchase-plan-price {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.purchase-plan-coins {
+    color: #f1c40f;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.purchase-message {
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.purchase-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.purchase-button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 5px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.purchase-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.purchase-button:active {
+    transform: translateY(0);
+}
+
+.purchase-confirm {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.purchase-confirm:hover {
+    background-color: #27ae60;
+}
+
+.purchase-cancel {
+    background-color: var(--error-color);
+    color: white;
+}
+
+.purchase-cancel:hover {
+    background-color: #c0392b;
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--background-darker);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(150%);
+    transition: transform 0.3s ease;
+    z-index: 1001;
+    border-left: 4px solid var(--primary-color);
+    max-width: 350px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-icon {
+    font-size: 1.5rem;
+}
+
+.notification-success {
+    border-left-color: var(--success-color);
+}
+
+.notification-error {
+    border-left-color: var(--error-color);
+}
+
+.notification-warning {
+    border-left-color: var(--warning-color);
+}
+
+.notification-info {
+    border-left-color: var(--info-color);
+}
+
+.notification-content {
+    font-size: 0.9rem;
+}
+
+.notification-close {
+    margin-left: 10px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .gift-tabs, .gift-code-buttons, .purchase-buttons {
+        flex-direction: column;
+    }
+    
+    .gift-tab, .gift-code-button, .purchase-button {
+        width: 100%;
+    }
+    
+    .preloader-bar {
+        width: 8px;
+        height: 40px;
+    }
+    
+    .preloader-text {
+        font-size: 1rem;
+    }
+    
+    .coin-plans {
+        grid-template-columns: 1fr;
+    }
+    
+    .custom-plan-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+    
+    .gift-section, .buy-coins-section, .history-card {
+        padding: 20px;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+    }
+    
+    .gift-form {
+        flex-direction: column;
+    }
+    
+    .gift-button {
+        justify-content: center;
+        padding: 12px;
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-content">
+            <div class="preloader-animation">
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+                <div class="preloader-bar"></div>
+            </div>
+            <div class="preloader-text">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-app" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <a href="index.html" class="logo">
+                        <i class="fas fa-arrow-left" style="font-size:1rem;color:var(--text-muted)"></i>
+                        <i class="fas fa-film"></i>
+                        <span>VideoCoins</span>
+                    </a>
+                    <div class="balance-container" id="balanceContainer">
+                        <i class="fas fa-coins balance-icon"></i>
+                        <span class="balance-amount" id="balanceAmount">0</span>
+                        <span>Coins</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="main-content">
+                <!-- Gift Section -->
+                <div class="gift-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <i class="fas fa-gift"></i>
+                            Gift System
+                        </h3>
+                    </div>
+                    
+                    <div class="gift-tabs">
+                        <div class="gift-tab active" data-tab="receive"><i class="fa-solid fa-gifts"></i> Receive Gift</div>
+                        <div class="gift-tab" data-tab="send"> <i class="fas fa-paper-plane"></i> Send Gift</div>
+                    </div>
+                    
+                    <!-- Receive Gift Tab -->
+                    <div class="gift-content active" id="receiveGift">
+                        <div class="gift-form">
+                            <input type="text" id="giftCodeInput" class="gift-input" placeholder="Enter gift code">
+                            <button class="gift-button" onclick="redeemGiftCode()">
+                               <i class="fa-solid fa-gifts"></i> Redeem
+                            </button>
+                        </div>
+                        <p class="gift-info">
+                            Enter a valid gift code to receive coins. Each code can only be used once.
+                        </p>
+                    </div>
+                    
+                    <!-- Send Gift Tab -->
+                    <div class="gift-content" id="sendGift">
+                        <div class="send-gift-form">
+                            <div class="form-row">
+                                <label class="form-label">Amount of coins to gift</label>
+                                <input type="number" id="sendGiftAmount" class="gift-input" placeholder="Enter amount" min="1">
+                            </div>
+                            <button class="gift-button" onclick="generateGiftCode()">
+                                <i class="fas fa-gift"></i> Generate Gift Code
+                            </button>
+                        </div>
+                        <p class="gift-info">
+                            The coins will be deducted from your balance and a unique gift code will be generated.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Buy Coins Section -->
+                <div class="buy-coins-section">
+                    <div class="section-header">
+                        <h3 class="section-title">
+                            <i class="fas fa-shopping-cart"></i>
+                            Buy Coins
+                        </h3>
+                    </div>
+                    
+                    <p class="gift-info">
+                        Purchase coins to use in the VideoCoin system. Coins are permanent and never expire.
+                    </p>
+                    
+                    <div class="coin-plans">
+                        <div class="coin-plan">
+                            <div class="plan-header">
+                                <span class="plan-price">$0.99</span>
+                                <span class="plan-coins">
+                                    <i class="fas fa-coins"></i> 105
+                                </span>
+                            </div>
+                            <button class="plan-button" onclick="showPurchaseModal('Basic Plan', 0.99, 105)">
+                                <i class="fas fa-cart-plus"></i> Buy Now
+                            </button>
+                        </div>
+                        
+                        <div class="coin-plan">
+                            <div class="plan-header">
+                                <span class="plan-price">$4.99</span>
+                                <span class="plan-coins">
+                                    <i class="fas fa-coins"></i> 600
+                                </span>
+                            </div>
+                            <button class="plan-button" onclick="showPurchaseModal('Standard Plan', 4.99, 600)">
+                                <i class="fas fa-cart-plus"></i> Buy Now
+                            </button>
+                        </div>
+                        
+                        <div class="coin-plan">
+                            <div class="plan-header">
+                                <span class="plan-price">$9.99</span>
+                                <span class="plan-coins">
+                                    <i class="fas fa-coins"></i> 1300
+                                </span>
+                            </div>
+                            <button class="plan-button" onclick="showPurchaseModal('Premium Plan', 9.99, 1300)">
+                                <i class="fas fa-cart-plus"></i> Buy Now
+                            </button>
+                        </div>
+                        
+                        <div class="coin-plan">
+                            <div class="plan-header">
+                                <span class="plan-price">$14.99</span>
+                                <span class="plan-coins">
+                                    <i class="fas fa-coins"></i> 2000
+                                </span>
+                            </div>
+                            <button class="plan-button" onclick="showPurchaseModal('Ultimate Plan', 14.99, 2000)">
+                                <i class="fas fa-cart-plus"></i> Buy Now
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="custom-plan">
+                        <h4 class="custom-plan-header">Custom Amount</h4>
+                        <div class="custom-plan-form">
+                            <div class="custom-plan-row">
+                                <label class="custom-plan-label">Number of Coins:</label>
+                                <input type="number" id="customCoinAmount" class="custom-plan-input" placeholder="Enter amount" min="1">
+                            </div>
+                            <div class="custom-plan-row">
+                                <span>Total Cost:</span>
+                                <div class="custom-plan-result" id="customCoinCost">$0.00</div>
+                            </div>
+                            <button class="custom-plan-button" onclick="showCustomPurchaseModal()">
+                                <i class="fas fa-cart-plus"></i> Purchase Custom Coins
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        <div class="warning-box-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Important Warning
+                        </div>
+                        <p class="warning-box-text">
+                            If you delete the app, you will lose all your coins permanently. Coins cannot be recovered once lost. Do not delete the app if you want to keep your coins.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div class="history-card">
+                    <div class="history-header">
+                        <h3 class="history-title">Transaction History</h3>
+                        <i class="fas fa-history history-icon"></i>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="history-empty">
+                            <i class="fas fa-history"></i>
+                            <p>No transactions yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Gift Code Modal -->
+        <div class="gift-code-modal" id="giftCodeModal">
+            <div class="gift-code-content">
+                <span class="gift-code-close" onclick="closeGiftCodeModal()">×</span>
+                <h3 class="gift-code-title">Your Gift Code</h3>
+                <p class="gift-code-subtitle">
+                    Share this code with anyone to gift them coins
+                </p>
+                <div class="gift-code-value" id="giftCodeDisplay"></div>
+                <div class="gift-code-buttons">
+                    <button class="gift-code-button gift-code-copy" onclick="copyGiftCode()">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="gift-code-button gift-code-close-btn" onclick="closeGiftCodeModal()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div class="success-modal" id="successModal">
+            <div class="success-content">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h3 class="success-title">Congratulations!</h3>
+                <p class="success-message" id="successMessage">You have successfully redeemed your gift code!</p>
+                <button class="success-button" onclick="closeSuccessModal()">
+                    <i class="fas fa-thumbs-up"></i> Awesome!
+                </button>
+            </div>
+        </div>
+
+        <!-- Purchase Modal -->
+        <div class="purchase-modal" id="purchaseModal">
+            <div class="purchase-content">
+                <span class="purchase-close" onclick="closePurchaseModal()">×</span>
+                <h3 class="purchase-title">Confirm Purchase</h3>
+                
+                <div class="purchase-plan" id="purchasePlanInfo">
+                    <div class="purchase-plan-info">
+                        <span class="purchase-plan-name">Basic Plan</span>
+                        <span class="purchase-plan-price">$0.99</span>
+                    </div>
+                    <span class="purchase-plan-coins">
+                        <i class="fas fa-coins"></i> <span id="purchasePlanCoins">105</span>
+                    </span>
+                </div>
+                
+                <p class="purchase-message">
+                    You will be redirected to our secure payment gateway to complete your purchase. Coins will be added upon successful payment.
+                </p>
+                
+                <div class="purchase-buttons">
+                    <button class="purchase-button purchase-confirm" onclick="confirmPurchase()">
+                        <i class="fas fa-credit-card"></i> Pay Now
+                    </button>
+                    <button class="purchase-button purchase-cancel" onclick="closePurchaseModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle notification-icon"></i>
+            <div class="notification-content">Notification message</div>
+            <span class="notification-close" onclick="hideNotification()">×</span>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <script src='https://libtl.com/sdk.js' data-zone='9615963' data-sdk='show_9615963'></script>
+    <script>
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAgHJNZ0hPdK9QUaXdxKLTX9ku8szsmdFI",
+  authDomain: "flix-net-bd1.firebaseapp.com",
+  databaseURL: "https://flix-net-bd1-default-rtdb.firebaseio.com",
+  projectId: "flix-net-bd1",
+  storageBucket: "flix-net-bd1.firebasestorage.app",
+  messagingSenderId: "277577167146",
+  appId: "1:277577167146:web:4787722732514dd20aae53",
+  measurementId: "G-LWGY452H4L"
+};
+
+        // ===== Safe helpers =====
+        function safeJsonParse(str, fallback) {
+            try { return JSON.parse(str); }
+            catch (e) { return fallback; }
+        }
+        function safeInt(v, def) {
+            const n = parseInt(v, 10);
+            return isNaN(n) ? (def || 0) : n;
+        }
+        function escHtmlLocal(s) {
+            const d = document.createElement('div');
+            d.textContent = (s == null) ? '' : String(s);
+            return d.innerHTML;
+        }
+
+        // Initialize Firebase (with double-init protection)
+        let database = null;
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+        } catch (e) {
+            console.error('Firebase init failed:', e);
+        }
+
+        // Global variables
+        let balance = 0;
+        let transactionHistory = [];
+        const MAX_HISTORY_ITEMS = 50;
+        let currentPurchasePlan = null;
+        let isRedeeming = false; // guard against double-redemption race
+
+        // DOM elements
+        const preloader = document.querySelector('.preloader');
+        const mainApp = document.querySelector('.main-app');
+        const balanceAmount = document.getElementById('balanceAmount');
+        const historyList = document.getElementById('historyList');
+        const notification = document.getElementById('notification');
+        const giftCodeInput = document.getElementById('giftCodeInput');
+        const giftCodeModal = document.getElementById('giftCodeModal');
+        const giftCodeDisplay = document.getElementById('giftCodeDisplay');
+        const sendGiftAmount = document.getElementById('sendGiftAmount');
+        const successModal = document.getElementById('successModal');
+        const successMessage = document.getElementById('successMessage');
+        const purchaseModal = document.getElementById('purchaseModal');
+        const purchasePlanInfo = document.getElementById('purchasePlanInfo');
+        const purchasePlanCoins = document.getElementById('purchasePlanCoins');
+        const customCoinAmount = document.getElementById('customCoinAmount');
+        const customCoinCost = document.getElementById('customCoinCost');
+
+        // Initialize the app
+        function initApp() {
+            // Load balance from localStorage (with validation)
+            const savedBalance = localStorage.getItem('userBalance');
+            balance = savedBalance !== null ? safeInt(savedBalance, 0) : 0;
+            updateBalanceDisplay();
+            
+            // Load transaction history from localStorage (with validation)
+            const savedHistory = localStorage.getItem('transactionHistory');
+            transactionHistory = safeJsonParse(savedHistory, []) || [];
+            if (!Array.isArray(transactionHistory)) transactionHistory = [];
+            updateHistoryDisplay();
+            
+            // Setup tab switchers
+            setupTabSwitchers();
+            
+            // Setup custom coin calculator
+            setupCustomCoinCalculator();
+            
+            // Hide preloader after everything is ready
+            setTimeout(hidePreloader, 1000);
+        }
+
+        // Hide preloader
+        function hidePreloader() {
+            if (preloader) {
+                preloader.style.opacity = '0';
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    if (mainApp) mainApp.style.display = 'block';
+                }, 500);
+            }
+        }
+
+        // Update balance display
+        function updateBalanceDisplay() {
+            if (balanceAmount) balanceAmount.textContent = balance;
+        }
+
+        // Update history display
+        function updateHistoryDisplay() {
+            if (!historyList) return;
+            
+            if (transactionHistory.length === 0) {
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        <i class="fas fa-history"></i>
+                        <p>No transactions yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            historyList.innerHTML = '';
+            transactionHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const date = new Date(item.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                const iconClass = item.type === 'gift' ? 'fa-gift' :
+                                  item.type === 'send' ? 'fa-paper-plane' :
+                                  item.type === 'purchase' ? 'fa-shopping-cart' :
+                                  'fa-coins';
+                const isNegative = item.type === 'send' || item.type === 'purchase';
+                
+                historyItem.innerHTML = `
+                    <div class="history-info">
+                        <div class="history-type">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="history-details">
+                            <h4>${escHtmlLocal(item.description || '')}</h4>
+                            <p>${escHtmlLocal(formattedDate)}</p>
+                        </div>
+                    </div>
+                    <div class="history-amount ${isNegative ? 'negative' : 'positive'}">
+                        ${isNegative ? '-' : '+'}${escHtmlLocal(item.amount)}
+                    </div>
+                `;
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+
+        // Setup tab switchers
+        function setupTabSwitchers() {
+            const giftTabs = document.querySelectorAll('.gift-tab');
+            giftTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelector('.gift-tab.active')?.classList.remove('active');
+                    tab.classList.add('active');
+                    
+                    document.querySelector('.gift-content.active')?.classList.remove('active');
+                    const contentId = tab.dataset.tab + 'Gift';
+                    const contentElement = document.getElementById(contentId);
+                    if (contentElement) contentElement.classList.add('active');
+                });
+            });
+        }
+
+        // Setup custom coin calculator
+        function setupCustomCoinCalculator() {
+            if (customCoinAmount) {
+                customCoinAmount.addEventListener('input', () => {
+                    const coins = safeInt(customCoinAmount.value, 0);
+                    if (coins < 0 || coins > 1000000) {
+                        if (customCoinCost) customCoinCost.textContent = '—';
+                        return;
+                    }
+                    const cost = (coins * 0.01).toFixed(2); // $0.01 per coin
+                    if (customCoinCost) customCoinCost.textContent = `$${cost}`;
+                });
+            }
+        }
+
+        // Show notification
+        function showNotification(message, icon, type) {
+            if (!notification) return;
+            
+            const notificationIcon = notification.querySelector('.notification-icon');
+            const notificationContent = notification.querySelector('.notification-content');
+            if (!notificationIcon || !notificationContent) return;
+
+            // Sanitize icon class (only allow fa- classes)
+            const safeIcon = String(icon).replace(/[^a-z0-9-]/gi, '');
+            notificationIcon.className = `fas fa-${safeIcon} notification-icon`;
+            notificationContent.textContent = message;
+            
+            notification.className = 'notification';
+            notification.classList.add(`notification-${type}`);
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        // Hide notification
+        function hideNotification() {
+            if (notification) notification.classList.remove('show');
+        }
+
+        // Redeem gift code — with race-condition guard via Firebase transaction
+        function redeemGiftCode() {
+            // Prevent double-click race
+            if (isRedeeming) return;
+            
+            const giftCode = giftCodeInput?.value.trim().toUpperCase();
+            
+            if (!giftCode) {
+                showNotification('Please enter a gift code', 'exclamation-circle', 'warning');
+                return;
+            }
+
+            if (!database) {
+                showNotification('Database not connected. Please refresh and try again.', 'times-circle', 'error');
+                return;
+            }
+            
+            isRedeeming = true;
+            const giftRef = database.ref(`gifts/${giftCode}`);
+            
+            // Use transaction for atomic redemption (prevents double-redemption race)
+            giftRef.transaction((currentData) => {
+                if (currentData === null) return null; // code doesn't exist
+                if (currentData.status !== 'active') return; // abort — already used
+                // Mark as used with redeemer info
+                currentData.status = 'used';
+                currentData.redeemedBy = 'web-guest';
+                currentData.redeemedAt = firebase.database.ServerValue.TIMESTAMP;
+                return currentData;
+            }).then((result) => {
+                isRedeeming = false;
+
+                // transaction returns null when the code doesn't exist (we returned null above)
+                if (result.committed === false || result.snapshot.val() === null) {
+                    // Check if it really doesn't exist, or if it was just used
+                    giftRef.once('value').then(snap => {
+                        const data = snap.val();
+                        if (!data) {
+                            showNotification('Invalid gift code', 'times-circle', 'error');
+                        } else if (data.status !== 'active') {
+                            showNotification('This code has already been used', 'times-circle', 'error');
+                        } else {
+                            showNotification('Could not redeem code. Please try again.', 'times-circle', 'error');
+                        }
+                    });
+                    return;
+                }
+
+                const giftData = result.snapshot.val();
+                const amount = safeInt(giftData.amount, 0);
+
+                // Add coins to balance
+                balance += amount;
+                localStorage.setItem('userBalance', String(balance));
+                updateBalanceDisplay();
+                
+                // Add to transaction history
+                const newTransaction = {
+                    type: 'gift',
+                    amount: amount,
+                    description: 'Gift code redemption',
+                    timestamp: new Date().getTime()
+                };
+                
+                transactionHistory.unshift(newTransaction);
+                if (transactionHistory.length > MAX_HISTORY_ITEMS) {
+                    transactionHistory.pop();
+                }
+                
+                localStorage.setItem('transactionHistory', JSON.stringify(transactionHistory));
+                updateHistoryDisplay();
+                
+                // Show success modal
+                if (successMessage) successMessage.textContent = `Success! You received ${amount} coins from the gift code.`;
+                showSuccessModal();
+                
+                if (giftCodeInput) giftCodeInput.value = '';
+            }).catch((error) => {
+                isRedeeming = false;
+                showNotification('Error checking gift code', 'times-circle', 'error');
+                console.error('Error checking gift code:', error);
+            });
+        }
+
+        // Generate gift code — uses crypto-safe random when available
+        function generateGiftCode() {
+            const amount = safeInt(sendGiftAmount?.value, 0);
+            
+            if (amount <= 0) {
+                showNotification('Please enter a valid amount', 'exclamation-circle', 'warning');
+                return;
+            }
+            
+            if (amount > balance) {
+                showNotification('Not enough coins', 'times-circle', 'error');
+                return;
+            }
+
+            if (!database) {
+                showNotification('Database not connected. Cannot generate code.', 'times-circle', 'error');
+                return;
+            }
+            
+            // Generate code using crypto-safe random when available
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let randomPart = '';
+            if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+                const arr = new Uint8Array(8);
+                window.crypto.getRandomValues(arr);
+                for (let i = 0; i < 8; i++) randomPart += chars[arr[i] % chars.length];
+            } else {
+                for (let i = 0; i < 8; i++) randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const giftCode = 'GIFT-' + randomPart;
+            
+            // Deduct from balance
+            balance -= amount;
+            localStorage.setItem('userBalance', String(balance));
+            updateBalanceDisplay();
+            
+            // Add transaction
+            const newTransaction = {
+                type: 'send',
+                amount: amount,
+                description: 'Gift sent to friend',
+                timestamp: new Date().getTime()
+            };
+            
+            transactionHistory.unshift(newTransaction);
+            if (transactionHistory.length > MAX_HISTORY_ITEMS) {
+                transactionHistory.pop();
+            }
+            
+            localStorage.setItem('transactionHistory', JSON.stringify(transactionHistory));
+            updateHistoryDisplay();
+            
+            // Save to Firebase
+            const giftData = {
+                id: giftCode,
+                code: giftCode,
+                amount: amount,
+                status: 'active',
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            
+            database.ref(`gifts/${giftCode}`).set(giftData).then(() => {
+                // Show code to user
+                if (giftCodeDisplay) giftCodeDisplay.textContent = giftCode;
+                if (giftCodeModal) giftCodeModal.classList.add('active');
+            }).catch((error) => {
+                // Refund the user if save fails
+                balance += amount;
+                localStorage.setItem('userBalance', String(balance));
+                updateBalanceDisplay();
+                // Also remove the local transaction record
+                transactionHistory.shift();
+                localStorage.setItem('transactionHistory', JSON.stringify(transactionHistory));
+                updateHistoryDisplay();
+
+                showNotification('Error generating gift code. Balance refunded.', 'times-circle', 'error');
+                console.error('Error generating gift code:', error);
+            });
+        }
+
+        // Copy gift code (with safe fallback)
+        function copyGiftCode() {
+            if (!giftCodeDisplay) return;
+            const text = giftCodeDisplay.textContent;
+            if (!text) return;
+            const fallback = () => {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+                document.body.appendChild(ta); ta.focus(); ta.select();
+                try { document.execCommand('copy'); } catch (e) {}
+                document.body.removeChild(ta);
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification('Code copied to clipboard!', 'check-circle', 'success');
+                }).catch(() => {
+                    fallback();
+                    showNotification('Code copied to clipboard!', 'check-circle', 'success');
+                });
+            } else {
+                fallback();
+                showNotification('Code copied to clipboard!', 'check-circle', 'success');
+            }
+        }
+
+        // Close gift modal
+        function closeGiftCodeModal() {
+            if (giftCodeModal) giftCodeModal.classList.remove('active');
+        }
+
+        // Show success modal
+        function showSuccessModal() {
+            if (successModal) successModal.classList.add('active');
+        }
+
+        // Close success modal
+        function closeSuccessModal() {
+            if (successModal) successModal.classList.remove('active');
+        }
+
+        // Show purchase modal
+        function showPurchaseModal(planName, price, coins) {
+            currentPurchasePlan = {
+                name: planName,
+                price: price,
+                coins: coins
+            };
+            
+            // Update modal content
+            const planInfo = purchasePlanInfo.querySelector('.purchase-plan-info');
+            if (planInfo) {
+                planInfo.innerHTML = `
+                    <span class="purchase-plan-name">${escHtmlLocal(planName)}</span>
+                    <span class="purchase-plan-price">$${price.toFixed(2)}</span>
+                `;
+            }
+            
+            if (purchasePlanCoins) purchasePlanCoins.textContent = coins;
+            
+            // Show modal
+            if (purchaseModal) purchaseModal.classList.add('active');
+        }
+
+        // Show custom purchase modal
+        function showCustomPurchaseModal() {
+            if (!customCoinAmount) return;
+            const coins = safeInt(customCoinAmount.value, 0);
+            
+            if (coins <= 0) {
+                showNotification('Please enter a valid number of coins', 'exclamation-circle', 'warning');
+                return;
+            }
+
+            if (coins > 1000000) {
+                showNotification('Maximum 1,000,000 coins per purchase', 'exclamation-circle', 'warning');
+                return;
+            }
+            
+            const price = coins * 0.01;
+            showPurchaseModal('Custom Plan', price, coins);
+        }
+
+        // Close purchase modal
+        function closePurchaseModal() {
+            if (purchaseModal) purchaseModal.classList.remove('active');
+            currentPurchasePlan = null;
+        }
+
+        // Confirm purchase (Updated for Local Testing with Proxy)
+        // NOTE: The API key below is intentionally exposed client-side for the payment
+        // gateway. For real production, this call should be proxied through a backend
+        // so the key is not visible to clients.
+        async function confirmPurchase() {
+            if (!currentPurchasePlan) return;
+            
+            // IMPORTANT: Move this API key to a backend proxy in production
+            const API_KEY = "GF3KVNrkl8dS017mEMQDz5p2HsbABJfj";
+            const amount = currentPurchasePlan.price; 
+            
+            const confirmBtn = document.querySelector('.purchase-confirm');
+            if (!confirmBtn) return;
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            confirmBtn.disabled = true;
+
+            // Use a safe origin (fallback for file:// protocol)
+            const originUrl = (window.location.origin && window.location.origin.startsWith("http"))
+                ? window.location.origin
+                : "https://yourdomain.com"; // TODO: Replace yourdomain.com with your actual domain
+
+            const payload = {
+                "full_name": "VideoCoins User", 
+                "email": "user@videocoins.com", 
+                "amount": amount,
+                "return_type": "GET",
+                "redirect_url": originUrl + "/success.html", 
+                "cancel_url": originUrl + "/redeem.html",
+                "metadata": { 
+                    "plan": currentPurchasePlan.name,
+                    "coins": currentPurchasePlan.coins
+                }
+            };
+
+            try {
+                // Live site: direct API call; Local testing: use CORS proxy
+                const TARGET_URL = "https://request.bohudur.one/create/v2/";
+                const isLocalFile = window.location.protocol === 'file:';
+                const FETCH_URL = isLocalFile ? ("https://corsproxy.io/?" + encodeURIComponent(TARGET_URL)) : TARGET_URL;
+
+                const response = await fetch(FETCH_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "AH-BOHUDUR-API-KEY": API_KEY
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success") {
+                    // Redirect to payment link
+                    window.location.href = data.payment_url;
+                } else {
+                    console.error("API Error:", data);
+                    showNotification("Payment Error: " + (data.message || 'Unknown error'), "times-circle", "error");
+                    confirmBtn.innerHTML = originalText;
+                    confirmBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Network Error:", error);
+                showNotification("CORS / Network Error! Check Console (F12).", "times-circle", "error");
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            }
+        }
+
+        // Start the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // Make functions available globally
+        window.redeemGiftCode = redeemGiftCode;
+        window.generateGiftCode = generateGiftCode;
+        window.copyGiftCode = copyGiftCode;
+        window.closeGiftCodeModal = closeGiftCodeModal;
+        window.closeSuccessModal = closeSuccessModal;
+        window.showPurchaseModal = showPurchaseModal;
+        window.closePurchaseModal = closePurchaseModal;
+        window.confirmPurchase = confirmPurchase;
+        window.showCustomPurchaseModal = showCustomPurchaseModal;
+        window.hideNotification = hideNotification;
+    </script>
+    <script>
+    // Load Font Awesome if not already loaded
+    if (!document.querySelector('link[href*="font-awesome"]')) {
+        const faLink = document.createElement('link');
+        faLink.rel = 'stylesheet';
+        faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        document.head.appendChild(faLink);
+    }
+    
+    // Create styles
+    const style = document.createElement('style');
+    style.textContent = `
+  #reliableBackBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: #ff0000;
+    color: white;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(231, 76, 60, 0.5);
+    z-index: 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.2s ease;
+  }
+  
+  #reliableBackBtn:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+  }
+  
+  #reliableBackBtn:active {
+    transform: scale(0.95);
+  }
+  
+  #reliableBackBtn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  
+  #reliableBackBtn.loading i {
+    animation: spin 0.6s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+    
+    document.head.appendChild(style);
+    
+    // Create button if not exists
+    if (!document.getElementById('reliableBackBtn')) {
+        const button = document.createElement('button');
+        button.id = 'reliableBackBtn';
+        button.innerHTML = '<i class="fas fa-arrow-left"></i>';
+        document.body.appendChild(button);
+        
+        // Multiple event listeners for reliability
+        function handleNavigation() {
+            // Prevent multiple clicks
+            if (button.classList.contains('loading')) return;
+            
+            // Visual feedback
+            button.classList.add('loading');
+            button.innerHTML = '<i class="fas fa-spinner"></i>';
+            
+            // Safely navigate after short delay to ensure feedback is visible
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 100);
+        }
+        
+        // Mouse events
+        button.addEventListener('click', handleNavigation);
+        button.addEventListener('mousedown', () => {
+            button.style.transform = 'scale(0.95)';
+        });
+        button.addEventListener('mouseup', () => {
+            button.style.transform = 'scale(1.05)';
+        });
+        
+        // Touch events for mobile devices
+        button.addEventListener('touchstart', () => {
+            button.style.transform = 'scale(0.95)';
+        }, { passive: true });
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            button.style.transform = 'scale(1.05)';
+            handleNavigation();
+        }, { passive: false });
+        
+        // Keyboard accessibility
+        button.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleNavigation();
+            }
+        });
+    }
+</script>
+</body>
+</html>

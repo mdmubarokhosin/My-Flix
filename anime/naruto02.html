@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Naruto Season 02</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="../tma-sdk.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            background: #0a0a0a; color: #fff; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh; min-height: 100dvh; line-height: 1.5;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: calc(60px + env(safe-area-inset-bottom));
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            overscroll-behavior-y: contain;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none; user-select: none;
+        }
+        input,textarea { user-select: text; -webkit-user-select: text; }
+        .header {
+            text-align: center; padding: 18px 16px; background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+            border-bottom: 2px solid #ff0000; position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 2px 12px rgba(255,0,0,.2);
+        }
+        .header h1 { font-size: 18px; color: #ff4444; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .header h1 i { font-size: 22px; }
+        .home-link {
+            display: inline-flex; align-items: center; gap: 6px; color: #aaa; text-decoration: none;
+            font-size: 12px; margin-top: 6px; padding: 8px 14px; border-radius: 12px;
+            background: rgba(255,255,255,.05); transition: all .2s;
+            min-height: 36px; /* Better touch target */
+        }
+        .home-link:hover { color: #fff; background: rgba(255,255,255,.1); }
+        .home-link:active { transform: scale(0.97); }
+        .container {
+            display: flex; flex-direction: column; align-items: center; padding: 14px;
+            max-width: 600px; margin: 0 auto; width: 100%;
+        }
+        .episode-btn {
+            background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 10px;
+            padding: 14px 18px; margin: 5px 0; width: 100%; font-size: 15px;
+            cursor: pointer; transition: all 0.2s; text-align: left;
+            display: flex; align-items: center; gap: 12px;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 48px; /* Better touch target */
+        }
+        .episode-btn:hover { background: #ff0000; border-color: #ff0000; transform: translateX(4px); }
+        .episode-btn:active { transform: scale(0.98); }
+        .episode-btn i { color: #ff4444; font-size: 18px; flex-shrink: 0; }
+        .episode-btn:hover i { color: #fff; }
+        .episode-btn .ep-num {
+            background: rgba(255,68,68,.2); color: #ff4444; font-weight: 700; font-size: 12px;
+            padding: 3px 8px; border-radius: 6px; margin-left: auto; flex-shrink: 0;
+        }
+        .episode-btn:hover .ep-num { background: rgba(255,255,255,.2); color: #fff; }
+        #video-player {
+            width: 100%; max-width: 800px; margin: 0 auto 14px; display: none;
+            position: relative; background: #000;
+        }
+        #video-player video, #video-player iframe {
+            width: 100%; aspect-ratio: 16/9; border: none; border-radius: 10px;
+            background: #000; display: block;
+        }
+        .player-loading {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px; color: #fff; background: rgba(0,0,0,.8);
+            border-radius: 10px; z-index: 2;
+        }
+        .player-loading i { font-size: 32px; animation: spin 1s linear infinite; }
+        .player-loading p { font-size: 13px; color: #aaa; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .back-btn {
+            background: #2a2a2a; color: #fff; border: 1px solid #444; border-radius: 8px;
+            padding: 12px 20px; margin: 8px auto; cursor: pointer; font-size: 14px; font-weight: 500;
+            display: none; width: calc(100% - 28px); max-width: 580px; text-align: center; gap: 8px;
+            align-items: center; justify-content: center; transition: all .2s;
+            min-height: 44px;
+        }
+        .back-btn:hover { background: #ff0000; border-color: #ff0000; }
+        .back-btn:active { transform: scale(0.97); }
+        .empty-state {
+            text-align: center; padding: 40px 20px; color: #888;
+        }
+        .empty-state i { font-size: 36px; margin-bottom: 10px; display: block; opacity: .5; }
+        @media(max-width: 600px) {
+            .header h1 { font-size: 16px; }
+            .header h1 i { font-size: 18px; }
+            .episode-btn { padding: 12px 14px; font-size: 14px; gap: 10px; }
+            .container { padding: 10px; }
+        }
+        @media(max-width: 360px) {
+            .episode-btn { padding: 10px 12px; font-size: 13px; }
+            .episode-btn .ep-num { font-size: 10px; padding: 2px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-tv"></i> Naruto Season 02</h1>
+        <a href="../index.html" class="home-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
+    </div>
+    <div id="video-player"></div>
+    <button class="back-btn" id="backBtn" type="button">
+        <i class="fas fa-arrow-left"></i> Back to Episodes
+    </button>
+    <div class="container" id="episodeList"></div>
+
+    <script>
+        const episodes = [
+                        {
+                                    "name": "Episode 01",
+                                    "url": "https://1024terabox.com/s/1Nkr2fqK58Vrf_HI4eJnjnQ"
+                        },
+                        {
+                                    "name": "Episode 02",
+                                    "url": "https://1024terabox.com/s/18lnJ37LRGcKjMN46zKI3hQ"
+                        },
+                        {
+                                    "name": "Episode 03",
+                                    "url": "https://1024terabox.com/s/11bMA6iQt8mcGsMVEe3pnBA"
+                        },
+                        {
+                                    "name": "Episode 04",
+                                    "url": "https://1024terabox.com/s/1WnquakoQzRov0UnOtxqqJA"
+                        },
+                        {
+                                    "name": "Episode 05",
+                                    "url": "https://1024terabox.com/s/1bybnv5z2PsM_XCJqIA6rzg"
+                        },
+                        {
+                                    "name": "Episode 06",
+                                    "url": "https://1024terabox.com/s/1xOQmbn1E075yM8HfdqsJfA"
+                        },
+                        {
+                                    "name": "Episode 07",
+                                    "url": "https://1024terabox.com/s/11SZNq7EWxeoXekCg0vOr6g"
+                        }
+            ];
+
+        const list = document.getElementById('episodeList');
+        const playerEl = document.getElementById('video-player');
+        const backBtnEl = document.getElementById('backBtn');
+
+        function renderEpisodes() {
+            if (!episodes.length) {
+                list.innerHTML = '<div class="empty-state"><i class="fas fa-film"></i><p>No episodes available yet.</p></div>';
+                return;
+            }
+            list.innerHTML = '';
+            episodes.forEach((ep, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'episode-btn';
+                btn.innerHTML = '<i class="fas fa-play-circle"></i>' +
+                    '<span>' + (ep.name || ('Episode ' + String(i+1).padStart(2,'0'))) + '</span>' +
+                    '<span class="ep-num">EP ' + String(i+1).padStart(2,'0') + '</span>';
+                btn.addEventListener('click', () => playEpisode(ep));
+                list.appendChild(btn);
+            });
+        }
+
+        function playEpisode(ep) {
+            // Haptic feedback on episode click
+            if (window.TMA && TMA.haptic) TMA.haptic.medium();
+            if (!playerEl) return;
+            const tvUrl = '../1tera/tv.html?q=' + encodeURIComponent(ep.url);
+            playerEl.innerHTML =
+                '<div class="player-loading" id="playerLoading"><i class="fas fa-spinner"></i><p>Loading video...</p></div>' +
+                '<iframe src="' + tvUrl + '" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>';
+            // Hide loading on iframe load
+            const iframe = playerEl.querySelector('iframe');
+            const loading = playerEl.querySelector('#playerLoading');
+            if (iframe && loading) {
+                iframe.addEventListener('load', () => { loading.style.display = 'none'; });
+                // Safety timeout in case load event never fires
+                setTimeout(() => { if (loading) loading.style.display = 'none'; }, 15000);
+            }
+            playerEl.style.display = 'block';
+            if (backBtnEl) backBtnEl.style.display = 'flex';
+            const epList = document.getElementById('episodeList');
+            if (epList) epList.style.display = 'none';
+            // Show native back button to close player
+            if (window.TMA && TMA.BackButton) {
+                TMA.BackButton.show(() => closePlayer());
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closePlayer() {
+            if (!playerEl) return;
+            // Clear iframe src first to stop playback, then remove
+            const iframe = playerEl.querySelector('iframe');
+            if (iframe) { try { iframe.src = 'about:blank'; } catch (e) {} }
+            playerEl.innerHTML = '';
+            playerEl.style.display = 'none';
+            if (backBtnEl) backBtnEl.style.display = 'none';
+            const epList = document.getElementById('episodeList');
+            if (epList) epList.style.display = 'flex';
+            // Hide native back button when on episode list
+            if (window.TMA && TMA.BackButton) {
+                TMA.BackButton.hide();
+            }
+            if (window.TMA && TMA.haptic) TMA.haptic.light();
+        }
+
+        // Wire up back button via addEventListener (no inline onclick)
+        if (backBtnEl) backBtnEl.addEventListener('click', closePlayer);
+
+        // Init: hide native back button on episode list view
+        if (window.TMA) {
+            const initTma = () => {
+                if (TMA.isTelegram && TMA.BackButton) {
+                    TMA.BackButton.hide();
+                }
+            };
+            if (TMA.ready) initTma();
+            else window.addEventListener('tma:ready', initTma);
+        }
+
+        renderEpisodes();
+    </script>
+</body>
+</html>

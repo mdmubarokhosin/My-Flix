@@ -1,0 +1,2932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
+    <meta name="description" content="All Video Hub - Stream movies, anime, web series and more">
+    <title>All Video Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VideoHub">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <!-- TMA SDK wrapper (MainButton / BackButton / HapticFeedback / CloudStorage / Popup / Theme) -->
+    <script src="tma-sdk.js"></script>
+    <!-- TMA Bootstrap (auto-haptics, native back button, viewport sync, settings button) -->
+    <script src="tma-bootstrap.js"></script>
+    <style>
+/* ===== CSS VARIABLES - DARK MODE (DEFAULT) ===== */
+:root{
+    --primary:#ff0000;--primary-dark:#cc0000;--primary-light:rgba(255,0,0,.3);
+    --bg-dark:#121212;--bg-darker:#0a0a0a;--bg-card:#1e1e1e;--bg-card-hover:#2a2a2a;
+    --text-light:#f5f5f5;--text-muted:#999;--border-color:#333;
+    --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--info:#3498db;
+    --radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+    --shadow-sm:0 2px 8px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4);--shadow-lg:0 8px 32px rgba(0,0,0,.5);
+    --transition:all .3s ease;--font:'Segoe UI',system-ui,-apple-system,sans-serif;
+    --nav-height:60px;--coin-color:#FFCB09;
+    --admin-accent:#6366f1;--admin-accent-hover:#818cf8;--admin-accent-light:rgba(99,102,241,.15);
+    --admin-success-bg:rgba(46,204,113,.15);--admin-danger-bg:rgba(231,76,60,.15);
+    --admin-warning-bg:rgba(243,156,18,.15);--admin-info-bg:rgba(52,152,219,.15);
+}
+
+/* ===== LIGHT MODE ===== */
+html.light-mode{
+    --bg-dark:#f5f5f5;--bg-darker:#ffffff;--bg-card:#ffffff;--bg-card-hover:#f0f0f0;
+    --text-light:#1a1a1a;--text-muted:#666;--border-color:#ddd;
+    --shadow-sm:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 4px 16px rgba(0,0,0,.1);--shadow-lg:0 8px 32px rgba(0,0,0,.15);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{background:var(--bg-dark);color:var(--text-light);font-family:var(--font);
+    min-height:100vh;min-height:100dvh;position:relative;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:calc(var(--nav-height) + env(safe-area-inset-bottom) + 10px);
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+    overflow-x:hidden;-webkit-tap-highlight-color:transparent;line-height:1.5;
+    /* Smooth scaling for Telegram Mini App viewport */
+    overscroll-behavior-y:contain;
+    -webkit-user-select:none;user-select:none;}
+/* Allow text selection in input fields and detail descriptions */
+input,textarea,.detail-desc,.card-title,.modal-title{user-select:text;-webkit-user-select:text}
+
+/* ===== PRELOADER ===== */
+#preloader{position:fixed;inset:0;background:var(--bg-dark);display:flex;
+    justify-content:center;align-items:center;z-index:9999;transition:opacity .5s ease}
+#preloader.fade-out{opacity:0;pointer-events:none}
+.preloader-content{display:flex;flex-direction:column;align-items:center;gap:24px}
+.preloader-animation{display:flex;gap:12px}
+.preloader-bar{width:10px;height:50px;background:var(--primary);border-radius:5px;
+    animation:barPulse 1.2s infinite ease-in-out}
+.preloader-bar:nth-child(1){animation-delay:0s}
+.preloader-bar:nth-child(2){animation-delay:.15s}
+.preloader-bar:nth-child(3){animation-delay:.3s}
+.preloader-bar:nth-child(4){animation-delay:.45s}
+.preloader-text{font-size:1rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted)}
+@keyframes barPulse{0%,100%{transform:scaleY(.5);opacity:.5}50%{transform:scaleY(1.3);opacity:1}}
+
+/* ===== OFFLINE BANNER ===== */
+.offline-banner{position:fixed;top:0;left:0;right:0;background:var(--danger);color:#fff;
+    text-align:center;padding:8px 16px;z-index:200;font-size:13px;font-weight:600;
+    letter-spacing:.5px;transform:translateY(-100%);transition:transform .3s ease}
+.offline-banner.visible{transform:translateY(0)}
+
+/* ===== HEADER ===== */
+header{background:var(--bg-darker);padding:10px 16px;display:flex;justify-content:space-between;
+    align-items:center;box-shadow:var(--shadow-sm);position:sticky;top:0;z-index:100;min-height:52px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;border-radius:50%;background:#000;display:flex;
+    justify-content:center;align-items:center;font-size:16px;font-weight:bold;color:var(--primary)}
+html.light-mode .logo-icon{background:#fff}
+.logo-text{font-size:18px;font-weight:700;color:var(--primary);text-transform:uppercase;
+    letter-spacing:1px;white-space:nowrap}
+.logo.hidden{opacity:0;width:0;overflow:hidden;pointer-events:none}
+.header-actions{display:flex;align-items:center;gap:12px}
+.search-wrap{position:absolute;left:12px;right:12px;z-index:105;display:none}
+.search-wrap.active{display:block}
+.search-input{width:100%;padding:10px 14px;background:var(--bg-darker);border:2px solid var(--primary);
+    color:var(--text-light);font-size:14px;outline:none;border-radius:var(--radius-sm)}
+.search-input::placeholder{color:#777}
+.search-input:focus{box-shadow:0 0 0 3px var(--primary-light)}
+.icon-btn{background:none;border:none;color:var(--text-light);font-size:18px;cursor:pointer;
+    transition:var(--transition);padding:6px}
+.icon-btn:hover{color:var(--primary)}
+.balance-badge{display:flex;align-items:center;gap:5px;background:var(--border-color);
+    padding:5px 12px;border-radius:20px;cursor:pointer;transition:var(--transition);
+    font-size:14px;font-weight:500}
+.balance-badge:hover{background:#444}
+.balance-badge i{color:var(--coin-color)}
+
+/* ===== BACK BUTTON ===== */
+.back-btn{display:none;position:sticky;top:52px;z-index:99;background:var(--bg-card);
+    border:none;color:var(--text-light);padding:10px 16px;font-size:14px;cursor:pointer;
+    border-bottom:1px solid var(--border-color);transition:var(--transition);width:100%;
+    text-align:left;gap:8px;align-items:center}
+.back-btn:hover{background:var(--bg-card-hover)}
+.back-btn i{margin-right:8px}
+
+/* ===== MAIN ===== */
+main{padding:12px}
+.page-panel{display:none}
+.page-panel.active{display:block}
+
+/* ===== VIDEO GRID ===== */
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:12px;margin-bottom:24px}
+.video-card{background:var(--bg-card);border-radius:var(--radius-md);overflow:hidden;
+    cursor:pointer;transition:var(--transition);position:relative}
+.video-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md)}
+.video-card:active{transform:translateY(0)}
+.thumb-wrap{position:relative;width:100%;padding-bottom:56.25%;overflow:hidden;background:#222}
+.thumb-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+    transition:transform .3s ease}
+.video-card:hover .thumb-wrap img{transform:scale(1.05)}
+.thumb-overlay{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;
+    background:rgba(0,0,0,.4);opacity:0;transition:opacity .3s}
+.video-card:hover .thumb-overlay{opacity:1}
+.thumb-overlay i{font-size:36px;color:rgba(255,255,255,.9)}
+.thumb-price{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.75);color:var(--coin-color);
+    padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;z-index:2;
+    display:flex;align-items:center;gap:3px}
+.thumb-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.75);color:#fff;
+    padding:2px 6px;border-radius:4px;font-size:11px;font-weight:500}
+.card-info{padding:8px 10px}
+.card-title{font-size:13px;font-weight:500;display:-webkit-box;-webkit-line-clamp:2;
+    -webkit-box-orient:vertical;overflow:hidden;text-transform:capitalize;line-height:1.4}
+
+/* ===== SECTION HEADER ===== */
+.section-header{display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:12px;padding:0 2px;flex-wrap:wrap;gap:8px}
+.section-header h2{font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.see-all{font-size:13px;color:var(--primary);cursor:pointer;font-weight:500;
+    text-transform:uppercase;text-decoration:none}
+
+/* ===== VIDEO PLAYER ===== */
+.player-wrapper{position:relative;width:100%;padding-bottom:56.25%;background:#000;
+    border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:16px}
+.player-wrapper video,.player-wrapper iframe{position:absolute;inset:0;width:100%;height:100%;
+    border:none;z-index:2}
+.player-preview{position:absolute;inset:0;z-index:3;display:flex;justify-content:center;
+    align-items:center;cursor:pointer;background:#000}
+.player-preview img{width:100%;height:100%;object-fit:cover;transition:opacity .3s}
+.player-preview .big-play{position:absolute;font-size:64px;color:rgba(255,255,255,.85);
+    text-shadow:0 2px 12px rgba(0,0,0,.6);transition:transform .2s}
+.player-preview .big-play:hover{transform:scale(1.1)}
+.player-close{position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.7);
+    color:#fff;border:none;border-radius:50%;width:34px;height:34px;font-size:14px;
+    cursor:pointer;display:none;align-items:center;justify-content:center;transition:background .2s}
+.player-close:hover{background:var(--danger)}
+.player-loading{position:absolute;inset:0;z-index:4;display:none;justify-content:center;
+    align-items:center;background:rgba(0,0,0,.8);color:#fff;flex-direction:column;gap:12px}
+.player-loading.active{display:flex}
+.player-loading i{font-size:32px;animation:spin 1s linear infinite}
+.player-loading span{font-size:13px;color:var(--text-muted)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.player-error{position:absolute;inset:0;z-index:4;display:none;justify-content:center;
+    align-items:center;background:rgba(0,0,0,.9);color:#fff;flex-direction:column;gap:12px;
+    text-align:center;padding:20px}
+.player-error.active{display:flex}
+.player-error i{font-size:40px;color:var(--danger)}
+.player-error h4{font-size:16px}
+.player-error p{font-size:13px;color:var(--text-muted);line-height:1.5}
+.player-error a{display:inline-block;padding:10px 24px;background:var(--primary);color:#fff;
+    border-radius:var(--radius-sm);text-decoration:none;font-weight:600;margin-top:8px;
+    transition:var(--transition)}
+.player-error a:hover{background:var(--primary-dark)}
+.detail-title{font-size:18px;font-weight:600;margin-bottom:8px}
+.detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.detail-tag{background:var(--bg-card);padding:4px 10px;border-radius:12px;font-size:12px;
+    cursor:pointer;transition:var(--transition);text-transform:capitalize}
+.detail-tag:hover{background:var(--primary)}
+.share-section{margin:12px 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.share-btn{background:var(--primary);color:#fff;border:none;padding:10px 16px;
+    border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;gap:8px;transition:var(--transition)}
+.share-btn:hover{background:var(--primary-dark)}
+.fav-btn{background:none;border:2px solid var(--danger);color:var(--danger);padding:10px 16px;
+    border-radius:var(--radius-sm);cursor:pointer;font-weight:600;font-size:14px;
+    display:inline-flex;align-items:center;gap:8px;transition:var(--transition)}
+.fav-btn:hover,.fav-btn.active{background:var(--danger);color:#fff}
+.share-link-box{display:none;width:100%;margin-top:8px;background:var(--bg-card);
+    padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border-color);position:relative}
+.share-link-box.visible{display:block}
+.share-link-text{font-size:13px;word-break:break-all;padding-right:70px;color:var(--text-muted)}
+.copy-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    background:var(--primary);color:#fff;border:none;padding:5px 10px;border-radius:4px;
+    font-size:12px;cursor:pointer;font-weight:500;transition:var(--transition)}
+.copy-btn:hover{background:var(--primary-dark)}
+.detail-desc{line-height:1.6;margin-bottom:12px;max-height:4.5em;overflow:hidden;position:relative}
+.detail-desc.expanded{max-height:none}
+.detail-desc:not(.expanded)::after{content:'';position:absolute;bottom:0;left:0;right:0;
+    height:2em;background:linear-gradient(transparent,var(--bg-dark))}
+.desc-toggle{color:var(--primary);cursor:pointer;font-size:13px;font-weight:500;
+    display:inline-block;margin-bottom:16px}
+.related-title{font-size:15px;font-weight:600;margin-bottom:10px}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
+    justify-content:center;align-items:center;z-index:150}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--bg-darker);border-radius:var(--radius-lg);width:90%;
+    max-width:340px;padding:24px;text-align:center;box-shadow:var(--shadow-lg);
+    animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0;transform:translateY(-20px)}}
+.modal-thumb{width:100%;height:160px;border-radius:var(--radius-sm);overflow:hidden;
+    margin-bottom:16px;position:relative}
+.modal-thumb img{width:100%;height:100%;object-fit:cover}
+.modal-thumb .play-sm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    font-size:36px;color:rgba(255,255,255,.8)}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:8px}
+.modal-price{font-size:15px;color:var(--coin-color);font-weight:600;display:flex;
+    align-items:center;justify-content:center;gap:5px;margin-bottom:20px}
+.modal-actions{display:flex;justify-content:center;gap:12px}
+.modal-btn{padding:10px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;
+    font-weight:600;font-size:14px;transition:var(--transition);display:flex;align-items:center;gap:6px}
+.modal-btn-cancel{background:var(--border-color);color:var(--text-light)}
+.modal-btn-cancel:hover{background:#444}
+.modal-btn-buy{background:var(--primary);color:#fff}
+.modal-btn-buy:hover{background:var(--primary-dark)}
+
+/* ===== NOTIFICATION ===== */
+.notif-container{position:fixed;bottom:70px;right:12px;z-index:160}
+.notif{background:var(--bg-darker);border-left:4px solid var(--primary);padding:12px 16px;
+    border-radius:var(--radius-sm);box-shadow:var(--shadow-md);margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;max-width:320px;font-size:13px;
+    transform:translateX(120%);transition:transform .3s ease}
+.notif.show{transform:translateX(0)}
+.notif i{color:var(--primary);font-size:18px;flex-shrink:0}
+
+/* ===== FOOTER NAV ===== */
+.footer-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg-darker);
+    display:flex;justify-content:space-around;padding:6px 0;
+    padding-bottom:max(6px,env(safe-area-inset-bottom));
+    box-shadow:0 -2px 10px rgba(0,0,0,.5);z-index:100;height:var(--nav-height)}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:var(--text-muted);
+    text-decoration:none;font-size:10px;padding:4px 8px;border-radius:var(--radius-sm);
+    transition:var(--transition);cursor:pointer;min-width:40px}
+.nav-item i{font-size:18px;margin-bottom:2px}
+.nav-item.active,.nav-item:hover{color:var(--primary)}
+.nav-item.active{background:rgba(255,0,0,.1)}
+
+/* ===== EARN PANEL ===== */
+.earn-card{background:var(--bg-card);border-radius:var(--radius-md);padding:20px;
+    box-shadow:var(--shadow-sm);margin-bottom:16px}
+.earn-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.earn-card-title{font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.earn-card-title i{color:var(--primary)}
+.earn-card-desc{color:var(--text-muted);font-size:.9rem;line-height:1.5;margin-bottom:15px}
+.earn-btn{background:var(--primary);color:#fff;border:none;padding:10px 20px;
+    border-radius:var(--radius-sm);cursor:pointer;font-weight:600;width:100%;
+    display:flex;justify-content:center;align-items:center;gap:8px;transition:var(--transition)}
+.earn-btn:hover{background:var(--primary-dark)}
+.earn-btn.disabled{background:#666;cursor:not-allowed}
+.streak-calendar{display:flex;justify-content:space-between;margin-bottom:10px}
+.day-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:12px;background:rgba(255,255,255,.1);color:var(--text-muted)}
+.day-icon.active{background:var(--primary);color:#fff}
+.day-icon.today{border:2px solid var(--primary)}
+.progress-bar{height:10px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;background:var(--primary);border-radius:5px;transition:width .3s ease}
+.history-list{max-height:300px;overflow-y:auto}
+.history-item{display:flex;justify-content:space-between;align-items:center;
+    padding:10px 0;border-bottom:1px solid var(--border-color)}
+.history-item:last-child{border-bottom:none}
+.history-type{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:12px;flex-shrink:0}
+.history-type.earn{background:rgba(46,204,113,.2);color:var(--success)}
+.history-type.spend{background:rgba(231,76,60,.2);color:var(--danger)}
+.history-info{flex:1;margin-left:10px;min-width:0}
+.history-info .h-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-info .h-time{font-size:11px;color:var(--text-muted)}
+.history-amount{font-weight:600;font-size:13px;flex-shrink:0}
+.history-amount.plus{color:var(--success)}
+.history-amount.minus{color:var(--danger)}
+
+/* ===== GIFT PANEL ===== */
+.gift-tabs{display:flex;border-bottom:1px solid var(--border-color);margin-bottom:20px}
+.gift-tab{padding:10px 20px;cursor:pointer;border-bottom:2px solid transparent;
+    transition:var(--transition);font-weight:500;color:var(--text-muted);font-size:14px}
+.gift-tab.active{border-bottom:2px solid var(--primary);color:var(--primary)}
+.gift-input-group{display:flex;gap:8px;margin-bottom:16px}
+.gift-input{flex:1;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border-color);
+    color:var(--text-light);border-radius:var(--radius-sm);font-size:14px;outline:none}
+.gift-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-light)}
+.gift-input::placeholder{color:#777}
+.gift-redeem-btn{background:var(--primary);color:#fff;border:none;padding:12px 24px;
+    border-radius:var(--radius-sm);font-weight:600;cursor:pointer;transition:var(--transition);
+    white-space:nowrap}
+
+/* ===== PROFILE PANEL ===== */
+.profile-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;
+    background:var(--bg-card);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm)}
+.profile-avatar{width:72px;height:72px;border-radius:50%;border:3px solid var(--primary);
+    object-fit:cover;background:var(--bg-card-hover);flex-shrink:0}
+.profile-avatar-placeholder{width:72px;height:72px;border-radius:50%;border:3px solid var(--primary);
+    background:var(--bg-card-hover);display:flex;align-items:center;justify-content:center;
+    font-size:28px;color:var(--primary);flex-shrink:0}
+.profile-info{flex:1;min-width:0}
+.profile-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.profile-username{font-size:14px;color:var(--text-muted)}
+.profile-id{font-size:12px;color:var(--text-muted);margin-top:2px}
+.profile-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.profile-stat{background:var(--bg-card);border-radius:var(--radius-md);padding:16px;
+    text-align:center;box-shadow:var(--shadow-sm)}
+.profile-stat i{font-size:24px;margin-bottom:8px;display:block}
+.profile-stat .stat-val{font-size:22px;font-weight:700}
+.profile-stat .stat-label{font-size:12px;color:var(--text-muted)}
+.theme-toggle-section{background:var(--bg-card);border-radius:var(--radius-md);padding:20px;
+    box-shadow:var(--shadow-sm);margin-bottom:20px}
+.theme-toggle-section h3{font-size:16px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.theme-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.theme-toggle-row span{font-size:14px}
+.theme-switch{position:relative;width:50px;height:26px;cursor:pointer}
+.theme-switch input{opacity:0;width:0;height:0}
+.theme-slider{position:absolute;inset:0;background:var(--border-color);border-radius:26px;transition:.3s}
+.theme-slider:before{content:'';position:absolute;height:20px;width:20px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.3s}
+.theme-switch input:checked+.theme-slider{background:var(--primary)}
+.theme-switch input:checked+.theme-slider:before{transform:translateX(24px)}
+
+/* ===== NO RESULTS ===== */
+.no-results{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.no-results p{margin-bottom:16px;font-size:14px}
+.tg-join-btn{display:inline-flex;align-items:center;gap:8px;background:#0088cc;color:#fff;
+    border:none;padding:10px 20px;border-radius:var(--radius-sm);text-decoration:none;
+    font-weight:600;font-size:14px;transition:var(--transition)}
+.tg-join-btn:hover{background:#0077b5}
+
+/* ===== ADMIN PANEL ===== */
+.admin-login-box{background:var(--bg-card);border-radius:var(--radius-lg);padding:30px;
+    max-width:380px;margin:40px auto;box-shadow:var(--shadow-lg);text-align:center}
+.admin-login-box h3{font-size:20px;font-weight:700;margin-bottom:8px}
+.admin-login-box p{color:var(--text-muted);font-size:13px;margin-bottom:20px}
+.admin-login-box .form-input{width:100%;padding:12px 16px;background:var(--bg-card-hover);
+    border:1px solid var(--border-color);color:var(--text-light);border-radius:var(--radius-sm);
+    font-size:15px;outline:none;margin-bottom:16px}
+.admin-login-box .form-input:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px var(--admin-accent-light)}
+.admin-login-error{color:var(--danger);font-size:13px;display:none;margin-bottom:8px}
+
+.admin-tabs{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--border-color);
+    margin-bottom:16px;gap:0;scrollbar-width:none}
+.admin-tabs::-webkit-scrollbar{display:none}
+.admin-tab{padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-muted);
+    white-space:nowrap;border-bottom:2px solid transparent;transition:var(--transition);
+    display:flex;align-items:center;gap:6px;min-height:44px}
+.admin-tab:hover{color:var(--text-light)}
+.admin-tab.active{color:var(--admin-accent);border-bottom-color:var(--admin-accent)}
+.admin-sub-panel{display:none}
+.admin-sub-panel.active{display:block}
+
+.admin-stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.admin-stat-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);
+    padding:16px;display:flex;align-items:center;gap:12px}
+.admin-stat-icon{width:42px;height:42px;border-radius:var(--radius-sm);display:flex;
+    align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.admin-stat-icon.videos{background:var(--admin-accent-light);color:var(--admin-accent)}
+.admin-stat-icon.codes{background:var(--admin-success-bg);color:var(--success)}
+.admin-stat-icon.active{background:var(--admin-warning-bg);color:var(--warning)}
+.admin-stat-icon.users{background:var(--admin-info-bg);color:var(--info)}
+.admin-stat-icon.coins{background:var(--admin-danger-bg);color:var(--danger)}
+.admin-stat-info h4{font-size:20px;font-weight:700;line-height:1.2}
+.admin-stat-info p{font-size:11px;color:var(--text-muted)}
+
+.admin-form-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);
+    padding:20px;margin-bottom:20px}
+.admin-form-card h3{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--admin-accent);
+    display:flex;align-items:center;gap:8px}
+.admin-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.admin-form-group{margin-bottom:12px}
+.admin-form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);
+    margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.admin-form-input{width:100%;padding:10px 14px;background:var(--bg-card-hover);border:1px solid var(--border-color);
+    color:var(--text-light);border-radius:var(--radius-sm);font-size:14px;outline:none}
+.admin-form-input:focus{border-color:var(--admin-accent);box-shadow:0 0 0 3px var(--admin-accent-light)}
+.admin-form-input::placeholder{color:#666}
+textarea.admin-form-input{min-height:80px;resize:vertical;font-family:inherit}
+.admin-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;
+    border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;
+    transition:var(--transition);min-height:40px}
+.admin-btn-primary{background:var(--admin-accent);color:#fff}
+.admin-btn-primary:hover{background:var(--admin-accent-hover)}
+.admin-btn-success{background:var(--success);color:#fff}
+.admin-btn-success:hover{background:#27ae60}
+.admin-btn-danger{background:var(--danger);color:#fff}
+.admin-btn-danger:hover{background:#c0392b}
+.admin-btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border-color)}
+.admin-btn-ghost:hover{background:var(--bg-card-hover);color:var(--text-light)}
+.admin-btn-sm{padding:6px 12px;font-size:12px;min-height:32px}
+
+.admin-search{position:relative;margin-bottom:16px}
+.admin-search input{width:100%;padding:10px 14px 10px 38px;background:var(--bg-card);
+    border:1px solid var(--border-color);border-radius:var(--radius-sm);color:var(--text-light);
+    font-size:14px;outline:none}
+.admin-search input:focus{border-color:var(--admin-accent)}
+.admin-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px}
+
+.admin-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--bg-card);
+    border:1px solid var(--border-color);border-radius:var(--radius-md)}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px}
+.admin-table th{background:var(--bg-card-hover);padding:10px 14px;text-align:left;font-size:11px;
+    font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+.admin-table td{padding:10px 14px;border-top:1px solid var(--border-color);vertical-align:middle}
+.admin-table tr:hover td{background:rgba(99,102,241,.04)}
+.admin-table .act-cell{display:flex;gap:4px;flex-wrap:nowrap}
+
+.admin-badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;
+    font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.2px;gap:3px}
+.admin-badge-active{background:var(--admin-success-bg);color:var(--success)}
+.admin-badge-used{background:var(--admin-danger-bg);color:var(--danger)}
+.admin-tag{display:inline-block;padding:2px 6px;background:var(--bg-card-hover);border-radius:3px;
+    font-size:10px;color:var(--text-muted);margin:1px}
+.admin-code-cell{font-family:'Courier New',monospace;font-weight:700;color:var(--admin-accent);
+    cursor:pointer}
+.admin-code-cell:hover{text-decoration:underline}
+.admin-thumb-preview{width:50px;height:32px;object-fit:cover;border-radius:3px;background:var(--bg-card-hover)}
+
+.admin-settings-section{background:var(--bg-card);border:1px solid var(--border-color);
+    border-radius:var(--radius-md);padding:20px;margin-bottom:16px}
+.admin-settings-section h3{font-size:15px;font-weight:700;margin-bottom:16px;
+    display:flex;align-items:center;gap:8px}
+.admin-settings-section h3 i{color:var(--admin-accent)}
+.admin-empty{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.admin-empty i{font-size:36px;margin-bottom:12px;display:block}
+
+/* Admin modal */
+.admin-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;
+    align-items:center;justify-content:center;z-index:200;padding:20px}
+.admin-modal-overlay.open{display:flex}
+.admin-modal{background:var(--bg-darker);border:1px solid var(--border-color);border-radius:var(--radius-lg);
+    width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:modalIn .3s ease}
+.admin-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+    border-bottom:1px solid var(--border-color)}
+.admin-modal-header h3{font-size:16px;font-weight:700}
+.admin-modal-close{background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;
+    min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--radius-sm);transition:var(--transition)}
+.admin-modal-close:hover{background:var(--bg-card-hover);color:var(--text-light)}
+.admin-modal-body{padding:20px}
+.admin-modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    padding:14px 20px;border-top:1px solid var(--border-color)}
+
+.admin-confirm-body{text-align:center;padding:16px 0}
+.admin-confirm-body i{font-size:40px;color:var(--warning);margin-bottom:12px}
+.admin-confirm-body p{font-size:14px;color:var(--text-muted);line-height:1.5}
+
+.admin-toast-container{position:fixed;top:60px;right:12px;z-index:300;display:flex;
+    flex-direction:column;gap:8px;max-width:340px}
+.admin-toast{display:flex;align-items:center;gap:10px;padding:12px 16px;
+    background:var(--bg-darker);border:1px solid var(--border-color);border-radius:var(--radius-sm);
+    box-shadow:var(--shadow-md);animation:toastIn .3s ease;font-size:13px}
+.admin-toast.success{border-left:4px solid var(--success)}
+.admin-toast.error{border-left:4px solid var(--danger)}
+.admin-toast.info{border-left:4px solid var(--info)}
+.admin-toast.success i{color:var(--success)}
+.admin-toast.error i{color:var(--danger)}
+.admin-toast.info i{color:var(--info)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+
+.admin-spinner{width:32px;height:32px;border:3px solid var(--border-color);border-top-color:var(--admin-accent);
+    border-radius:50%;animation:spin .8s linear infinite;margin:30px auto}
+
+/* ===== SAFE AREA / SCROLLBAR ===== */
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-darker)}
+::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--primary)}
+*:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+    .video-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+    .preloader-bar{width:8px;height:36px}
+    .card-title{font-size:12px}
+    .thumb-price,.thumb-duration{font-size:10px}
+    .logo-text{font-size:15px}
+    .detail-title{font-size:16px}
+    .nav-item{font-size:9px;min-width:36px;padding:4px 6px}
+    .nav-item i{font-size:16px}
+    .admin-form-row{grid-template-columns:1fr}
+    .admin-stats-grid{grid-template-columns:1fr 1fr}
+    .admin-modal{max-width:100%}
+    .admin-form-card,.admin-settings-section{padding:14px}
+    .admin-table{font-size:12px}
+    .admin-table th,.admin-table td{padding:8px 10px}
+    .balance-badge{padding:4px 10px;font-size:13px}
+    .modal-box{padding:18px}
+    .profile-header{padding:16px;gap:12px}
+    .profile-avatar,.profile-avatar-placeholder{width:60px;height:60px}
+    .earn-card{padding:16px}
+    main{padding:8px}
+    header{padding:8px 12px}
+    .logo-icon{width:28px;height:28px;font-size:14px}
+}
+@media(max-width:360px){
+    .video-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+    .admin-stats-grid{grid-template-columns:1fr}
+    .admin-table{font-size:11px}
+    .header-actions{gap:6px}
+    .icon-btn{font-size:16px;padding:5px}
+    .balance-badge{padding:3px 8px;font-size:12px}
+    .nav-item{min-width:32px;font-size:8px}
+}
+@media(min-width:768px){
+    .video-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+    main{max-width:800px;margin:0 auto}
+    .admin-stats-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+}
+/* iPhone safe area */
+@supports(padding:max(0px)){
+    header{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));padding-top:max(10px,env(safe-area-inset-top))}
+    .footer-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))}
+}
+    </style>
+</head>
+<body>
+
+<!-- Preloader -->
+<div id="preloader">
+    <div class="preloader-content">
+        <div class="preloader-animation">
+            <div class="preloader-bar"></div><div class="preloader-bar"></div>
+            <div class="preloader-bar"></div><div class="preloader-bar"></div>
+        </div>
+        <div class="preloader-text">Loading...</div>
+    </div>
+</div>
+
+<!-- Offline Banner -->
+<div class="offline-banner" id="offlineBanner">You are offline. Some features may not work.</div>
+
+<!-- Header -->
+<header>
+    <div class="logo" id="logoWrap">
+        <div class="logo-icon"><i class="fas fa-play"></i></div>
+        <div class="logo-text">All Video Hub</div>
+    </div>
+    <div class="search-wrap" id="searchWrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search videos..." autocomplete="off">
+    </div>
+    <div class="header-actions">
+        <button class="icon-btn" id="searchToggle" aria-label="Search"><i class="fas fa-search"></i></button>
+        <div class="balance-badge" id="balanceBadge"><i class="fas fa-coins"></i><span id="balanceText">0</span></div>
+    </div>
+</header>
+
+<!-- Back Button -->
+<button class="back-btn" id="backBtn"><i class="fas fa-arrow-left"></i> Back</button>
+
+<!-- Main Content -->
+<main>
+    <!-- HOME -->
+    <section class="page-panel active" id="panelHome"></section>
+
+    <!-- CATEGORIES -->
+    <section class="page-panel" id="panelCategories">
+        <div class="section-header"><h2>All Categories</h2></div>
+        <div class="video-grid" id="catGrid"></div>
+    </section>
+
+    <!-- VIDEO PLAYER -->
+    <section class="page-panel" id="panelPlayer">
+        <div class="player-wrapper" id="playerWrapper">
+            <div class="player-preview" id="playerPreview">
+                <img id="playerThumb" src="" alt="">
+                <i class="fas fa-play-circle big-play" id="bigPlayBtn"></i>
+            </div>
+            <button class="player-close" id="playerClose"><i class="fas fa-times"></i></button>
+            <div class="player-loading" id="playerLoading"><i class="fas fa-spinner"></i><span>Loading video...</span></div>
+            <div class="player-error" id="playerError">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Video Load Failed</h4>
+                <p id="playerErrorMsg">The video could not be loaded.</p>
+                <a id="playerErrorLink" href="#" target="_blank" rel="noopener">Open Directly</a>
+            </div>
+        </div>
+        <div class="video-details">
+            <h2 class="detail-title" id="detailTitle"></h2>
+            <div class="detail-tags" id="detailTags"></div>
+            <div class="share-section">
+                <button class="share-btn" id="shareBtn"><i class="fas fa-share-alt"></i> Share</button>
+                <button class="fav-btn" id="favBtn"><i class="far fa-heart"></i> Favorite</button>
+                <div class="share-link-box" id="shareBox">
+                    <span class="share-link-text" id="shareText"></span>
+                    <button class="copy-btn" id="copyBtn"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>
+            <div class="detail-desc" id="detailDesc"></div>
+            <span class="desc-toggle" id="descToggle">Show more</span>
+        </div>
+        <h3 class="related-title">Related Videos</h3>
+        <div class="video-grid" id="relatedGrid"></div>
+    </section>
+
+    <!-- EARN -->
+    <section class="page-panel" id="panelEarn">
+        <div class="section-header"><h2><i class="fas fa-coins" style="color:var(--coin-color)"></i> Earn Coins</h2></div>
+        <div class="earn-card">
+            <div class="earn-card-header">
+                <div class="earn-card-title"><i class="fas fa-ad"></i> Watch Ad</div>
+                <span style="color:var(--coin-color);font-weight:600"><i class="fas fa-coins"></i> +5</span>
+            </div>
+            <div class="earn-card-desc">Watch a short advertisement to earn 5 coins. You can watch up to 10 ads per day.</div>
+            <button class="earn-btn" id="watchAdBtn"><i class="fas fa-play-circle"></i> Watch Ad &amp; Earn</button>
+        </div>
+        <div class="earn-card">
+            <div class="earn-card-header">
+                <div class="earn-card-title"><i class="fas fa-calendar-check"></i> Daily Check-in</div>
+                <span id="streakCount" style="color:var(--coin-color);font-weight:600">0 day streak</span>
+            </div>
+            <div class="earn-card-desc">Check in daily to earn bonus coins! Streak bonus increases every day.</div>
+            <div class="streak-calendar" id="streakCalendar"></div>
+            <div class="progress-bar" style="margin-bottom:12px"><div class="progress-fill" id="streakProgress" style="width:0%"></div></div>
+            <button class="earn-btn" id="dailyCheckinBtn"><i class="fas fa-gift"></i> Check In Today</button>
+        </div>
+        <div class="earn-card">
+            <div class="earn-card-header"><div class="earn-card-title"><i class="fas fa-history"></i> History</div></div>
+            <div class="history-list" id="historyList"><div class="no-results" style="padding:20px"><p>No transactions yet</p></div></div>
+        </div>
+    </section>
+
+    <!-- GIFT -->
+    <section class="page-panel" id="panelGift">
+        <div class="section-header"><h2><i class="fas fa-gift" style="color:var(--primary)"></i> Gift Codes</h2></div>
+        <div class="gift-tabs">
+            <div class="gift-tab active" data-gtab="redeem">Redeem</div>
+            <div class="gift-tab" data-gtab="history">History</div>
+        </div>
+        <div id="giftRedeem">
+            <div class="gift-input-group">
+                <input type="text" class="gift-input" id="giftCodeInput" placeholder="Enter gift code...">
+                <button class="gift-redeem-btn" id="redeemBtn"><i class="fas fa-check"></i> Redeem</button>
+            </div>
+            <div id="redeemResult" style="margin-top:12px"></div>
+        </div>
+        <div id="giftHistory" style="display:none">
+            <div class="history-list" id="giftHistoryList"><div class="no-results" style="padding:20px"><p>No gift code history</p></div></div>
+        </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="page-panel" id="panelProfile">
+        <div class="section-header"><h2><i class="fas fa-user" style="color:var(--primary)"></i> Profile</h2></div>
+        <div class="profile-header" id="profileHeader">
+            <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder"><i class="fas fa-user"></i></div>
+            <img class="profile-avatar" id="profileAvatar" style="display:none" src="" alt="">
+            <div class="profile-info">
+                <div class="profile-name" id="profileName">Guest User</div>
+                <div class="profile-username" id="profileUsername">@guest</div>
+                <div class="profile-id" id="profileTgId">ID: --</div>
+            </div>
+        </div>
+        <div class="profile-stats">
+            <div class="profile-stat"><i class="fas fa-coins" style="color:var(--coin-color)"></i><div class="stat-val" id="profileBalance">0</div><div class="stat-label">Balance</div></div>
+            <div class="profile-stat"><i class="fas fa-heart" style="color:var(--danger)"></i><div class="stat-val" id="profileFavorites">0</div><div class="stat-label">Favorites</div></div>
+            <div class="profile-stat"><i class="fas fa-shopping-cart" style="color:var(--info)"></i><div class="stat-val" id="profilePurchased">0</div><div class="stat-label">Purchased</div></div>
+            <div class="profile-stat"><i class="fas fa-calendar" style="color:var(--success)"></i><div class="stat-val" id="profileStreak">0</div><div class="stat-label">Day Streak</div></div>
+        </div>
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-section">
+            <h3><i class="fas fa-palette"></i> Appearance</h3>
+            <div class="theme-toggle-row">
+                <span><i class="fas fa-moon"></i> Dark Mode</span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="theme-slider"></span>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- ADMIN PANEL (Same Window SPA) -->
+    <section class="page-panel" id="panelAdmin">
+        <!-- Admin Login (shown when not authenticated) -->
+        <div id="adminLogin">
+            <div class="admin-login-box">
+                <i class="fas fa-shield-halved" style="font-size:40px;color:var(--admin-accent);margin-bottom:12px"></i>
+                <h3>Admin Panel</h3>
+                <p>Enter password to access admin controls</p>
+                <input type="password" id="adminPassInput" class="form-input" placeholder="Admin Password">
+                <p id="adminLoginError" class="admin-login-error">Incorrect password</p>
+                <button class="admin-btn admin-btn-primary" id="adminLoginBtn" style="width:100%">
+                    <i class="fas fa-right-to-bracket"></i> Sign In
+                </button>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard (shown when authenticated) -->
+        <div id="adminDashboard" style="display:none">
+            <!-- Admin Sub-tabs -->
+            <div class="admin-tabs" id="adminTabs">
+                <div class="admin-tab active" data-atab="dashboard"><i class="fas fa-gauge-high"></i> Dashboard</div>
+                <div class="admin-tab" data-atab="videos"><i class="fas fa-film"></i> Videos</div>
+                <div class="admin-tab" data-atab="categories"><i class="fas fa-tags"></i> Categories</div>
+                <div class="admin-tab" data-atab="giftcodes"><i class="fas fa-gift"></i> Gift Codes</div>
+                <div class="admin-tab" data-atab="users"><i class="fas fa-users"></i> Users</div>
+                <div class="admin-tab" data-atab="settings"><i class="fas fa-gear"></i> Settings</div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div class="admin-sub-panel active" id="adminTab-dashboard">
+                <div class="admin-stats-grid" id="adminStatsGrid">
+                    <div class="admin-stat-card"><div class="admin-stat-icon videos"><i class="fas fa-film"></i></div><div class="admin-stat-info"><h4 id="aStatVideos">0</h4><p>Videos</p></div></div>
+                    <div class="admin-stat-card"><div class="admin-stat-icon codes"><i class="fas fa-gift"></i></div><div class="admin-stat-info"><h4 id="aStatCodes">0</h4><p>Gift Codes</p></div></div>
+                    <div class="admin-stat-card"><div class="admin-stat-icon active"><i class="fas fa-check-circle"></i></div><div class="admin-stat-info"><h4 id="aStatActive">0</h4><p>Active Codes</p></div></div>
+                    <div class="admin-stat-card"><div class="admin-stat-icon users"><i class="fas fa-users"></i></div><div class="admin-stat-info"><h4 id="aStatUsers">0</h4><p>Users</p></div></div>
+                    <div class="admin-stat-card"><div class="admin-stat-icon coins"><i class="fas fa-coins"></i></div><div class="admin-stat-info"><h4 id="aStatCoins">0</h4><p>Coins Total</p></div></div>
+                </div>
+                <!-- Seed Demo Data Section -->
+                <div class="admin-form-card" style="margin-top:16px">
+                    <h3><i class="fas fa-database"></i> Quick Setup</h3>
+                    <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;line-height:1.5">
+                        One-click setup: seeds <strong>10 categories</strong>, <strong>30 demo videos</strong> (3 per category),
+                        <strong>2 demo users</strong>, and sets the admin password to <code>admin123</code>.
+                        <br><span style="color:var(--warning);font-size:12px"><i class="fas fa-exclamation-triangle"></i> This will ADD data to Firebase — use only on a fresh database.</span>
+                    </p>
+                    <button class="admin-btn admin-btn-success" id="aSeedDataBtn" style="width:100%">
+                        <i class="fas fa-seedling"></i> Seed Demo Data (10 Categories + 30 Videos + 2 Users)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Videos Tab -->
+            <div class="admin-sub-panel" id="adminTab-videos">
+                <div class="admin-form-card" id="aVideoFormCard">
+                    <h3 id="aVideoFormTitle"><i class="fas fa-plus-circle"></i> Add New Video</h3>
+                    <input type="hidden" id="aVideoEditId" value="">
+                    <div class="admin-form-row">
+                        <div class="admin-form-group"><label>Name *</label><input type="text" id="aVideoName" class="admin-form-input" placeholder="Video name"></div>
+                        <div class="admin-form-group"><label>URL *</label><input type="url" id="aVideoUrl" class="admin-form-input" placeholder="https://..."></div>
+                    </div>
+                    <div class="admin-form-row">
+                        <div class="admin-form-group"><label>Thumbnail URL</label><input type="url" id="aVideoThumb" class="admin-form-input" placeholder="https://..."></div>
+                        <div class="admin-form-group"><label>Coins *</label><input type="number" id="aVideoAmount" class="admin-form-input" placeholder="50" min="0"></div>
+                    </div>
+                    <div class="admin-form-row">
+                        <div class="admin-form-group"><label>Duration</label><input type="text" id="aVideoDuration" class="admin-form-input" placeholder="10:30"></div>
+                        <div class="admin-form-group"><label>Tags (comma)</label><input type="text" id="aVideoTags" class="admin-form-input" placeholder="action, drama"></div>
+                    </div>
+                    <div class="admin-form-group"><label>Info</label><textarea id="aVideoInfo" class="admin-form-input" placeholder="One paragraph per line"></textarea></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="admin-btn admin-btn-primary" id="aVideoSubmitBtn"><i class="fas fa-save"></i> <span id="aVideoSubmitText">Add Video</span></button>
+                        <button class="admin-btn admin-btn-ghost" id="aVideoCancelBtn" style="display:none"><i class="fas fa-times"></i> Cancel</button>
+                    </div>
+                </div>
+                <div class="admin-search"><i class="fas fa-search"></i><input type="text" id="aVideoSearch" placeholder="Search videos..."></div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+                    <th>ID</th><th>Thumb</th><th>Name</th><th>Coins</th><th>Tags</th><th>Actions</th>
+                </tr></thead><tbody id="aVideoTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- Categories Tab -->
+            <div class="admin-sub-panel" id="adminTab-categories">
+                <div class="admin-form-card">
+                    <h3><i class="fas fa-plus-circle"></i> Add Category</h3>
+                    <div class="admin-form-row">
+                        <div class="admin-form-group"><label>Category Name *</label><input type="text" id="aCatName" class="admin-form-input" placeholder="e.g. Horror" maxlength="40"></div>
+                        <div class="admin-form-group"><label>Icon (fa class)</label><input type="text" id="aCatIcon" class="admin-form-input" placeholder="fas fa-ghost"><p class="hint"><i class="fas fa-info-circle"></i> Browse at fontawesome.com/icons. Empty = default.</p></div>
+                    </div>
+                    <button class="admin-btn admin-btn-primary" id="aCatAddBtn"><i class="fas fa-plus"></i> Add Category</button>
+                </div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+                    <th>#</th><th>Category</th><th>Icon</th><th>Videos</th><th>Actions</th>
+                </tr></thead><tbody id="aCatTbody"><tr><td colspan="5"><div class="admin-spinner"></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- Gift Codes Tab -->
+            <div class="admin-sub-panel" id="adminTab-giftcodes">
+                <div class="admin-form-card">
+                    <h3><i class="fas fa-plus-circle"></i> Create Gift Code</h3>
+                    <div class="admin-form-row">
+                        <div class="admin-form-group"><label>Coin Amount *</label><input type="number" id="aGiftAmount" class="admin-form-input" placeholder="100" min="1"></div>
+                        <div class="admin-form-group"><label>Package Name</label><input type="text" id="aGiftPackage" class="admin-form-input" placeholder="Welcome Bonus"></div>
+                    </div>
+                    <button class="admin-btn admin-btn-success" id="aGiftCreateBtn"><i class="fas fa-gift"></i> Generate Code</button>
+                </div>
+                <div class="admin-search"><i class="fas fa-search"></i><input type="text" id="aGiftSearch" placeholder="Search codes..."></div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+                    <th>Code</th><th>Amount</th><th>Package</th><th>Status</th><th>Created</th><th>Actions</th>
+                </tr></thead><tbody id="aGiftTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="admin-sub-panel" id="adminTab-users">
+                <div class="admin-search"><i class="fas fa-search"></i><input type="text" id="aUserSearch" placeholder="Search users..."></div>
+                <div class="admin-table-wrap"><table class="admin-table"><thead><tr>
+                    <th>Name</th><th>Username</th><th>Balance</th><th>Favorites</th><th>Purchased</th><th>Actions</th>
+                </tr></thead><tbody id="aUserTbody"><tr><td colspan="6"><div class="admin-spinner"></div></td></tr></tbody></table></div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="admin-sub-panel" id="adminTab-settings">
+                <div class="admin-settings-section">
+                    <h3><i class="fas fa-key"></i> Change Admin Password</h3>
+                    <div class="admin-form-group"><label>Current Password</label><input type="password" id="aCurrentPass" class="admin-form-input" placeholder="Current password"></div>
+                    <div class="admin-form-group"><label>New Password</label><input type="password" id="aNewPass" class="admin-form-input" placeholder="New password"></div>
+                    <div class="admin-form-group"><label>Confirm Password</label><input type="password" id="aConfirmPass" class="admin-form-input" placeholder="Confirm new password"></div>
+                    <button class="admin-btn admin-btn-primary" id="aChangePassBtn"><i class="fas fa-save"></i> Update Password</button>
+                </div>
+                <div class="admin-settings-section">
+                    <h3><i class="fas fa-right-from-bracket"></i> Session</h3>
+                    <button class="admin-btn admin-btn-danger" id="aLogoutBtn"><i class="fas fa-right-from-bracket"></i> Logout Admin</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Footer Nav -->
+<nav class="footer-nav">
+    <a class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home</span></a>
+    <a class="nav-item" data-page="categories"><i class="fas fa-list"></i><span>Categories</span></a>
+    <a class="nav-item" data-page="earn"><i class="fas fa-coins"></i><span>Earn</span></a>
+    <a class="nav-item" data-page="gift"><i class="fas fa-gift"></i><span>Gift</span></a>
+    <a class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></a>
+    <a class="nav-item" id="adminNavBtn" href="admin.html"><i class="fas fa-shield-halved"></i><span>Admin</span></a>
+</nav>
+
+<!-- Purchase Modal -->
+<div class="modal-overlay" id="purchaseModal">
+    <div class="modal-box">
+        <div class="modal-thumb"><img id="modalThumb" src="" alt=""><i class="fas fa-play-circle play-sm"></i></div>
+        <h3 class="modal-title" id="modalTitle"></h3>
+        <div class="modal-price"><i class="fas fa-coins"></i><span id="modalPrice"></span> coins</div>
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" id="modalCancel"><i class="fas fa-times"></i> Cancel</button>
+            <button class="modal-btn modal-btn-buy" id="modalBuy"><i class="fas fa-shopping-cart"></i> Buy</button>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Confirm Modal -->
+<div class="admin-modal-overlay" id="aConfirmModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header"><h3 id="aConfirmTitle">Confirm</h3><button class="admin-modal-close" id="aConfirmClose"><i class="fas fa-times"></i></button></div>
+        <div class="admin-modal-body"><div class="admin-confirm-body"><i class="fas fa-triangle-exclamation"></i><p id="aConfirmMsg">Are you sure?</p></div></div>
+        <div class="admin-modal-footer"><button class="admin-btn admin-btn-ghost" id="aConfirmCancelBtn">Cancel</button><button class="admin-btn admin-btn-danger" id="aConfirmOkBtn">Confirm</button></div>
+    </div>
+</div>
+
+<!-- Admin Balance Modal -->
+<div class="admin-modal-overlay" id="aBalanceModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header"><h3>Edit User Balance</h3><button class="admin-modal-close" id="aBalanceClose"><i class="fas fa-times"></i></button></div>
+        <div class="admin-modal-body">
+            <p style="color:var(--text-muted);margin-bottom:8px">User: <strong id="aBalanceUserName" style="color:var(--admin-accent)"></strong></p>
+            <p style="margin-bottom:12px">Current Balance: <strong id="aBalanceCurrent" style="color:var(--warning)"></strong> coins</p>
+            <div class="admin-form-group"><label>New Balance (set absolute value)</label><input type="number" id="aBalanceNewVal" class="admin-form-input" placeholder="e.g. 500" min="0"></div>
+        </div>
+        <div class="admin-modal-footer"><button class="admin-btn admin-btn-ghost" id="aBalanceCancelBtn">Cancel</button><button class="admin-btn admin-btn-success" id="aBalanceSaveBtn"><i class="fas fa-save"></i> Save</button></div>
+    </div>
+</div>
+
+<!-- Admin Edit Category Modal -->
+<div class="admin-modal-overlay" id="aCategoryModal">
+    <div class="admin-modal">
+        <div class="admin-modal-header"><h3 id="aCatModalTitle">Edit Category</h3><button class="admin-modal-close" id="aCatClose"><i class="fas fa-times"></i></button></div>
+        <div class="admin-modal-body">
+            <div class="admin-form-group"><label for="aCatNameInput">Category Name *</label><input type="text" id="aCatNameInput" class="admin-form-input" placeholder="e.g. Horror" maxlength="40"></div>
+            <div class="admin-form-group"><label for="aCatIconInput">Icon (FontAwesome class)</label><input type="text" id="aCatIconInput" class="admin-form-input" placeholder="fas fa-ghost"><p class="hint"><i class="fas fa-info-circle"></i> Browse at fontawesome.com/icons</p></div>
+            <div class="admin-form-group"><label>Preview</label>
+                <div id="aCatPreview" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-color)">
+                    <i id="aCatPreviewIcon" class="fas fa-tag" style="color:var(--admin-accent);font-size:18px"></i>
+                    <span id="aCatPreviewName" style="font-weight:600">Category Name</span>
+                </div>
+            </div>
+        </div>
+        <div class="admin-modal-footer"><button class="admin-btn admin-btn-ghost" id="aCatCancelBtn">Cancel</button><button class="admin-btn admin-btn-primary" id="aCatSaveBtn"><i class="fas fa-save"></i> Save Changes</button></div>
+    </div>
+</div>
+
+<!-- Notification Container -->
+<div class="notif-container" id="notifContainer"></div>
+<!-- Admin Toast Container -->
+<div class="admin-toast-container" id="adminToastContainer"></div>
+
+<script>
+/* ================================================================
+   ALL VIDEO HUB - Production SPA with Telegram Mini App + Firebase
+   Admin Panel integrated in same window, Light/Dark mode
+   ================================================================ */
+(function(){
+'use strict';
+
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+    apiKey:"AIzaSyAgHJNZ0hPdK9QUaXdxKLTX9ku8szsmdFI",
+    authDomain:"flix-net-bd1.firebaseapp.com",
+    databaseURL:"https://flix-net-bd1-default-rtdb.firebaseio.com",
+    projectId:"flix-net-bd1",
+    storageBucket:"flix-net-bd1.firebasestorage.app",
+    messagingSenderId:"277577167146",
+    appId:"1:277577167146:web:4787722732514dd20aae53",
+    measurementId:"G-LWGY452H4L"
+};
+
+let db = null;
+try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+} catch(e) { console.error('Firebase init failed:', e); }
+
+// ===== APP STATE =====
+const state = {
+    videos:[],
+    // Categories now stored as objects: [{name, icon}, ...]
+    // Legacy string format also supported via normalizeTag()
+    tags:[
+        {name:'Hindi',       icon:'fas fa-language'},
+        {name:'Bangla',      icon:'fas fa-language'},
+        {name:'webseries',   icon:'fas fa-tv'},
+        {name:'action',      icon:'fas fa-bolt'},
+        {name:'Comedy',      icon:'fas fa-laugh'},
+        {name:'romantic',    icon:'fas fa-heart'},
+        {name:'horror',      icon:'fas fa-ghost'},
+        {name:'Anime',       icon:'fas fa-dragon'},
+        {name:'Cartoon',     icon:'fas fa-child'},
+        {name:'adult',       icon:'fas fa-user-shield'},
+        {name:'Indian',      icon:'fas fa-flag'},
+        {name:'BD-SEX',      icon:'fas fa-user-shield'},
+        {name:'viral-link',  icon:'fas fa-fire'},
+        {name:'Hentai',      icon:'fas fa-dragon'},
+        {name:'Russian',     icon:'fas fa-globe'},
+        {name:'BAZAARS',     icon:'fas fa-store'}
+    ],
+    currentPanel:'home',
+    prevPanel:'home',
+    currentVideo:null,
+    videoForPurchase:null,
+    isSearchActive:false,
+    isTelegramApp:false,
+    tgUser:null,
+    userId:null,
+    userData:{
+        balance:0, purchased:[], favorites:[],
+        lastCheckIn:null, streak:0, adWatchedToday:0, lastAdDate:null,
+        transactions:[], giftHistory:[], createdAt:null
+    },
+    _searchTimer:null, _loadTimeout:null, _startVideoId:null,
+    _giftTabsBound:false, _videosListenerAttached:false,
+    // Admin state
+    adminAuth:false,
+    adminVideosData:{},
+    adminGiftsData:{},
+    adminUsersData:{},
+    _adminListenersInit:false,
+    _adminTabsBound:false,
+    _aConfirmCallback:null,
+    _aBalanceUid:null,
+    _adminFirebasePass:null,
+    _aEditCatIdx:null
+};
+
+// ===== TAG HELPERS (work with BOTH string and {name, icon} formats) =====
+function normalizeTag(t) {
+    if (typeof t === 'string') return { name: t, icon: '' };
+    if (t && typeof t === 'object') return { name: String(t.name || ''), icon: String(t.icon || '') };
+    return { name: '', icon: '' };
+}
+function tagName(t) { return normalizeTag(t).name; }
+function tagIcon(t) { const i = normalizeTag(t).icon; return i || 'fas fa-tag'; }
+function escapeRegex(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+// ===== DOM REFS =====
+const $ = id => document.getElementById(id);
+
+// ===== SAFE JSON PARSE =====
+function safeJsonParse(str, fallback) {
+    try { return JSON.parse(str); } catch(e) { return fallback; }
+}
+
+// ===== CLIPBOARD =====
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    return Promise.resolve();
+}
+
+// ===== BROWSER USER ID (for non-Telegram environment) =====
+// Generates a stable UUID stored in localStorage so browser users get
+// the same identity across sessions. Telegram users keep their real TG id.
+function getOrCreateBrowserUserId() {
+    try {
+        let id = localStorage.getItem('avh_browser_uid');
+        if (!id) {
+            // Generate a pseudo-random UUID v4
+            id = 'b_' + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            localStorage.setItem('avh_browser_uid', id);
+        }
+        return id;
+    } catch(e) {
+        // Fallback to session-only random ID if localStorage is blocked
+        return 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    }
+}
+
+function getBrowserUserName() {
+    try { return localStorage.getItem('avh_browser_name') || ''; } catch(e) { return ''; }
+}
+
+function setBrowserUserName(name) {
+    try { localStorage.setItem('avh_browser_name', name || 'Browser User'); } catch(e) {}
+}
+
+// ===== THEME MANAGEMENT (Firebase + localStorage + TMA SDK sync) =====
+// Works in BOTH Telegram (Firebase-backed) and Browser (localStorage-backed)
+function initTheme() {
+    // 1. First try localStorage for instant theme apply (avoids flash)
+    let applied = false;
+    try {
+        const localTheme = localStorage.getItem('avh_theme');
+        if (localTheme === 'light') {
+            if (window.TMA && TMA.Theme) TMA.Theme.apply('light');
+            else document.documentElement.classList.add('light-mode');
+            if ($('themeToggle')) $('themeToggle').checked = true;
+            applied = true;
+        } else if (localTheme === 'dark') {
+            if (window.TMA && TMA.Theme) TMA.Theme.apply('dark');
+            else document.documentElement.classList.remove('light-mode');
+            if ($('themeToggle')) $('themeToggle').checked = false;
+            applied = true;
+        }
+    } catch(e) {}
+
+    // 2. Then try Firebase (overrides localStorage if user has saved theme server-side)
+    if (db && state.userId) {
+        db.ref('users/' + state.userId + '/theme').once('value', snap => {
+            const saved = snap.val();
+            if (saved === 'light') {
+                if (window.TMA && TMA.Theme) TMA.Theme.apply('light');
+                else document.documentElement.classList.add('light-mode');
+                if ($('themeToggle')) $('themeToggle').checked = true;
+                try { localStorage.setItem('avh_theme', 'light'); } catch(e) {}
+            } else if (saved === 'dark') {
+                if (window.TMA && TMA.Theme) TMA.Theme.apply('dark');
+                else document.documentElement.classList.remove('light-mode');
+                if ($('themeToggle')) $('themeToggle').checked = false;
+                try { localStorage.setItem('avh_theme', 'dark'); } catch(e) {}
+            }
+        });
+    }
+    if ($('themeToggle')) {
+        $('themeToggle').addEventListener('change', function() {
+            const theme = this.checked ? 'light' : 'dark';
+            if (window.TMA && TMA.Theme) {
+                TMA.Theme.apply(theme);
+            } else {
+                if (theme === 'light') document.documentElement.classList.add('light-mode');
+                else document.documentElement.classList.remove('light-mode');
+            }
+            // Persist to BOTH localStorage (browser) and Firebase (when available)
+            try { localStorage.setItem('avh_theme', theme); } catch(e) {}
+            saveThemeToFirebase(theme);
+            if (window.TMA && TMA.haptic) TMA.haptic.selection();
+        });
+    }
+}
+
+function saveThemeToFirebase(theme) {
+    if (db && state.userId) {
+        db.ref('users/' + state.userId + '/theme').set(theme).catch(e => console.warn('Theme save failed:', e));
+    }
+}
+
+// ===== TELEGRAM INIT (also handles browser mode) =====
+function initTelegram() {
+    try {
+        // Use our TMA SDK wrapper — it handles ready/expand/closingConfirmation/etc.
+        // TMA SDK is loaded as a separate file and auto-initializes.
+        // Here we just read the user/state from it once ready.
+        const applyTma = () => {
+            if (window.TMA && TMA.isTelegram) {
+                state.isTelegramApp = true;
+                if (TMA.user) {
+                    state.tgUser = TMA.user;
+                    state.userId = String(TMA.user.id);
+                }
+                if (TMA.startParam) {
+                    const match = TMA.startParam.match(/(?:video_)?(\d+)/);
+                    if (match && !state._startVideoId) { state._startVideoId = parseInt(match[1]); }
+                }
+                // Once we have userId, load user data + theme (delayed if needed)
+                if (state.userId && !state._userDataLoaded) {
+                    state._userDataLoaded = true;
+                    loadUserData();
+                    initTheme();
+                    // Re-check for start video now that we have user
+                    if (state._startVideoId && state.videos.length) {
+                        const video = state.videos.find(v => v.id === state._startVideoId);
+                        if (video) showVideoDetails(video);
+                    }
+                }
+            }
+        };
+        if (window.TMA && TMA.ready) { applyTma(); }
+        else { window.addEventListener('tma:ready', applyTma); }
+
+        // Browser mode fallback — runs immediately if Telegram is not detected
+        // (TMA SDK auto-initializes and reports ready=false within ~50ms when
+        // outside Telegram, so this is fast)
+        const checkBrowserFallback = () => {
+            if (state.userId) return; // Already have user (Telegram mode)
+            // Not in Telegram — set up browser user identity + load local data
+            state.userId = getOrCreateBrowserUserId();
+            state.isTelegramApp = false;
+            state.tgUser = null;
+            console.info('[App] Running in browser mode — userId:', state.userId);
+            // Load user data from localStorage (or create defaults)
+            loadLocalData();
+            initTheme();
+            if (!state._userDataLoaded) {
+                state._userDataLoaded = true;
+                // If Firebase is available, also try to sync with Firebase
+                if (db) {
+                    loadUserData();
+                } else {
+                    updateBalance();
+                    updateProfilePanel();
+                }
+            }
+            // Re-check for start video
+            if (state._startVideoId && state.videos.length) {
+                const video = state.videos.find(v => v.id === state._startVideoId);
+                if (video) showVideoDetails(video);
+            }
+        };
+
+        // Run browser fallback after a short delay (allows TMA SDK to report ready)
+        // If TMA is in Telegram, applyTma() will have set userId by then
+        setTimeout(checkBrowserFallback, 300);
+
+        // Absolute safety net: if for some reason neither path has run after 2s, force browser mode
+        setTimeout(() => {
+            if (!state.userId) {
+                console.warn('[App] Forcing browser mode after timeout');
+                checkBrowserFallback();
+            }
+        }, 2000);
+    } catch(e) { console.warn('Telegram WebApp init failed:', e); }
+}
+
+// ===== FIREBASE USER DATA =====
+function loadUserData() {
+    if (!db || !state.userId) { loadLocalData(); return; }
+    db.ref('users/' + state.userId).on('value', snap => {
+        const data = snap.val();
+        if (data) {
+            // Ensure numeric balance, default to 0 if missing or invalid
+            const balance = (typeof data.balance === 'number' && !isNaN(data.balance)) ? data.balance : (parseInt(data.balance) || 0);
+            state.userData = {
+                ...state.userData, ...data,
+                balance: balance,
+                purchased: Array.isArray(data.purchased) ? data.purchased.map(id => Number(id)).filter(n => !isNaN(n)) : [],
+                favorites: Array.isArray(data.favorites) ? data.favorites.map(id => Number(id)).filter(n => !isNaN(n)) : [],
+                transactions: Array.isArray(data.transactions) ? data.transactions : [],
+                giftHistory: Array.isArray(data.giftHistory) ? data.giftHistory : [],
+                streak: parseInt(data.streak) || 0,
+                adWatchedToday: parseInt(data.adWatchedToday) || 0
+            };
+        } else {
+            const newUserData = {
+                id: state.userId,
+                firstName: state.tgUser ? state.tgUser.first_name : 'Guest',
+                lastName: state.tgUser ? (state.tgUser.last_name || '') : '',
+                username: state.tgUser ? (state.tgUser.username || '') : '',
+                photoUrl: state.tgUser ? (state.tgUser.photo_url || '') : '',
+                balance:0, purchased:[], favorites:[],
+                lastCheckIn:null, streak:0, adWatchedToday:0, lastAdDate:null,
+                transactions:[], giftHistory:[], createdAt: Date.now()
+            };
+            db.ref('users/' + state.userId).set(newUserData).catch(e => console.warn('User create failed:', e));
+            state.userData = newUserData;
+        }
+        updateBalance(); updateProfilePanel();
+        // Apply theme from Firebase user data (only if data exists)
+        if (data && data.theme === 'light') {
+            if (window.TMA && TMA.Theme) TMA.Theme.apply('light');
+            else document.documentElement.classList.add('light-mode');
+            try { localStorage.setItem('avh_theme', 'light'); } catch(e) {}
+            if ($('themeToggle')) $('themeToggle').checked = true;
+        } else if (data && data.theme === 'dark') {
+            if (window.TMA && TMA.Theme) TMA.Theme.apply('dark');
+            else document.documentElement.classList.remove('light-mode');
+            try { localStorage.setItem('avh_theme', 'dark'); } catch(e) {}
+            if ($('themeToggle')) $('themeToggle').checked = false;
+        }
+        // Refresh MainButton if currently on player page
+        if (state.currentPanel === 'player') updateMainButtonForPage('player');
+    }, err => { console.warn('User data listener error:', err); loadLocalData(); });
+}
+
+function saveUserData() {
+    // ALWAYS save to localStorage first (instant, works offline, in browser, and in Telegram)
+    saveLocalData();
+    // Then sync to Firebase if available (multi-device sync)
+    if (!db || !state.userId) return;
+    const dataToSave = {...state.userData};
+    db.ref('users/' + state.userId).update(dataToSave).catch(e => {
+        console.warn('Firebase save failed (using localStorage only):', e);
+    });
+}
+
+// ===== LOCALSTORAGE FALLBACK (works in BOTH browser and Telegram) =====
+// This is the primary persistence layer for browser users and acts as an
+// instant cache + offline fallback for Telegram users.
+function loadLocalData() {
+    if (!state.userId) return;
+    const key = 'avh_user_' + state.userId;
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            const data = JSON.parse(raw);
+            const balance = (typeof data.balance === 'number' && !isNaN(data.balance)) ? data.balance : (parseInt(data.balance) || 0);
+            state.userData = {
+                ...state.userData, ...data,
+                balance: balance,
+                purchased: Array.isArray(data.purchased) ? data.purchased.map(id => Number(id)).filter(n => !isNaN(n)) : [],
+                favorites: Array.isArray(data.favorites) ? data.favorites.map(id => Number(id)).filter(n => !isNaN(n)) : [],
+                transactions: Array.isArray(data.transactions) ? data.transactions : [],
+                giftHistory: Array.isArray(data.giftHistory) ? data.giftHistory : [],
+                streak: parseInt(data.streak) || 0,
+                adWatchedToday: parseInt(data.adWatchedToday) || 0
+            };
+            console.info('[App] Loaded user data from localStorage');
+        } else {
+            // First-time browser user — initialize defaults
+            state.userData = {
+                id: state.userId,
+                firstName: 'Browser',
+                lastName: 'User',
+                username: '',
+                photoUrl: '',
+                balance: 0,
+                purchased: [],
+                favorites: [],
+                lastCheckIn: null,
+                streak: 0,
+                adWatchedToday: 0,
+                lastAdDate: null,
+                transactions: [],
+                giftHistory: [],
+                createdAt: Date.now()
+            };
+            saveLocalData();
+        }
+    } catch(e) {
+        console.warn('localStorage load failed:', e);
+    }
+    updateBalance();
+    updateProfilePanel();
+}
+
+function saveLocalData() {
+    if (!state.userId) return;
+    const key = 'avh_user_' + state.userId;
+    try {
+        localStorage.setItem(key, JSON.stringify(state.userData));
+    } catch(e) {
+        console.warn('localStorage save failed:', e);
+    }
+}
+
+// ===== NAVIGATION =====
+function navigateTo(page, opts) {
+    opts = opts || {};
+    if (state.currentPanel !== page) state.prevPanel = state.currentPanel;
+
+    document.querySelectorAll('.page-panel').forEach(p => p.classList.remove('active'));
+    const panel = $('panel' + page.charAt(0).toUpperCase() + page.slice(1));
+    if (panel) panel.classList.add('active');
+    state.currentPanel = page;
+
+    const showBack = ['player','earn','gift','profile','categories','admin'].includes(page);
+    $('backBtn').style.display = showBack ? 'flex' : 'none';
+
+    // Sync native Telegram BackButton with our back button visibility
+    if (window.TMA && TMA.BackButton) {
+        if (showBack) {
+            TMA.BackButton.show(() => goBack());
+        } else {
+            TMA.BackButton.hide();
+        }
+    }
+
+    document.querySelectorAll('.nav-item[data-page]').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector('.nav-item[data-page="' + page + '"]');
+    if (navItem) navItem.classList.add('active');
+
+    // skipRender flag allows callers (like showAllByTag) to set custom content
+    // on the home panel without renderHome() overwriting it
+    if (opts.skipRender) { /* caller will handle rendering */ }
+    else if (page === 'home') renderHome();
+    else if (page === 'categories') renderCategories();
+    else if (page === 'earn') renderEarnPanel();
+    else if (page === 'gift') renderGiftPanel();
+    else if (page === 'profile') updateProfilePanel();
+    else if (page === 'admin') initAdminPanel();
+
+    if (state.isSearchActive) toggleSearch();
+
+    // Manage MainButton based on page context
+    updateMainButtonForPage(page);
+
+    // Selection haptic for nav change
+    if (window.TMA && TMA.haptic) TMA.haptic.selection();
+
+    window.scrollTo(0, 0);
+}
+
+// ===== MAIN BUTTON MANAGEMENT (per-page) =====
+function updateMainButtonForPage(page) {
+    if (!window.TMA || !TMA.isTelegram) return;
+    // Hide by default; specific contexts show it
+    if (page === 'player' && state.currentVideo) {
+        const vidId = Number(state.currentVideo.id);
+        const purchased = !isNaN(vidId) && state.userData.purchased.includes(vidId);
+        if (!purchased) {
+            TMA.MainButton.show('Buy for ' + (state.currentVideo.amount || 0) + ' coins', () => {
+                showPurchaseModal(state.currentVideo);
+                TMA.MainButton.hide();
+            }, { color: '#ff0000' });
+        } else {
+            TMA.MainButton.hide();
+        }
+    } else if (page === 'earn') {
+        const today = new Date().toDateString();
+        if (state.userData.lastAdDate !== today) state.userData.adWatchedToday = 0;
+        if ((state.userData.adWatchedToday || 0) < 10) {
+            TMA.MainButton.show('Watch Ad & Earn +5', () => watchAd(), { color: '#ff0000' });
+        } else {
+            TMA.MainButton.hide();
+        }
+    } else if (page === 'gift') {
+        TMA.MainButton.show('Redeem Code', () => {
+            const input = $('giftCodeInput');
+            const code = (input && input.value || '').trim();
+            if (code) redeemGiftCode();
+            else if (input) input.focus();
+        }, { color: '#ff0000' });
+    } else if (page === 'profile') {
+        // Show a "Share App" main button
+        TMA.MainButton.show('Share App', () => {
+            handleShareApp();
+        }, { color: '#0088cc' });
+    } else {
+        TMA.MainButton.hide();
+    }
+}
+
+function handleShareApp() {
+    const shareUrl = window.location.origin + window.location.pathname;
+    const shareText = '🎬 All Video Hub - Stream movies, anime, web series & more!';
+    if (window.TMA && TMA.Share) {
+        TMA.Share.shareUrl(shareUrl, shareText).then(() => {
+            notify('App link shared!', 'check-circle');
+        });
+    } else if (navigator.share) {
+        navigator.share({ title: 'All Video Hub', text: shareText, url: shareUrl }).catch(() => {});
+    } else {
+        copyToClipboard(shareUrl).then(() => notify('Link copied!', 'check-circle'));
+    }
+}
+
+function goBack() {
+    if (state.currentPanel === 'player') resetPlayer();
+    navigateTo(state.prevPanel || 'home');
+    // Haptic for back navigation
+    if (window.TMA && TMA.haptic) TMA.haptic.light();
+}
+
+// ===== LOAD VIDEOS =====
+function loadVideos() {
+    // Safety: hide preloader after 15s even if videos never load
+    if (!state._preloaderTimeout) {
+        state._preloaderTimeout = setTimeout(() => {
+            if ($('preloader').style.display !== 'none') hidePreloader();
+        }, 15000);
+    }
+
+    if (!navigator.onLine) {
+        // Try local cache as fallback
+        loadVideosFromJson();
+        return;
+    }
+    if (db && !state._videosListenerAttached) {
+        state._videosListenerAttached = true;
+        db.ref('videos').on('value', snap => {
+            const data = snap.val();
+            if (data && Object.keys(data).length > 0) {
+                state.videos = Object.values(data).map(v => ({
+                    ...v,
+                    id: (function() {
+                        // Prefer numeric IDs, but preserve strings that can't be parsed
+                        const n = parseInt(v.id, 10);
+                        return !isNaN(n) ? n : v.id;
+                    })(),
+                    amount: parseInt(v.amount, 10) || 0,
+                    time: v.time || v.duration || '',
+                    img: v.img || v.thumbnail || '',
+                    tag: v.tag || v.tags || '',
+                    info: Array.isArray(v.info) ? v.info : (v.info ? [String(v.info)] : [])
+                })).sort((a,b) => {
+                    // Sort by createdAt if available, otherwise by id descending
+                    const ba = Number(a.createdAt) || Number(a.id) || 0;
+                    const bb = Number(b.createdAt) || Number(b.id) || 0;
+                    return bb - ba;
+                });
+                hidePreloader();
+                if (state._startVideoId) {
+                    const video = state.videos.find(v => Number(v.id) === Number(state._startVideoId) || String(v.id) === String(state._startVideoId));
+                    if (video) showVideoDetails(video); else renderHome();
+                } else if (state.currentPanel === 'home') { renderHome(); }
+            } else { loadVideosFromJson(); }
+        }, err => { console.warn('Videos listener error:', err); loadVideosFromJson(); });
+    } else if (!db) { loadVideosFromJson(); }
+}
+
+function loadVideosFromJson() {
+    fetch('movis.json')
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(data => {
+            if (!Array.isArray(data)) { throw new Error('Invalid video data format'); }
+            state.videos = data.map(v => ({
+                ...v,
+                id: (function() {
+                    const n = parseInt(v.id, 10);
+                    return !isNaN(n) ? n : v.id;
+                })(),
+                amount: parseInt(v.amount, 10) || 0,
+                time: v.time || '',
+                img: v.img || '',
+                tag: v.tag || '',
+                info: Array.isArray(v.info) ? v.info : (v.info ? [String(v.info)] : [])
+            })).filter(v => v.id !== undefined && v.id !== null && v.name);
+            hidePreloader();
+            if (state._startVideoId) {
+                const video = state.videos.find(v => Number(v.id) === Number(state._startVideoId) || String(v.id) === String(state._startVideoId));
+                if (video) showVideoDetails(video); else renderHome();
+            } else renderHome();
+        })
+        .catch(err => {
+            console.error('Failed to load videos:', err);
+            notify('Failed to load videos. Please refresh.', 'exclamation-circle');
+            hidePreloader();
+            // Show empty state
+            $('panelHome').innerHTML = '<div class="no-results"><i class="fas fa-exclamation-triangle" style="font-size:48px;color:var(--warning);margin-bottom:12px"></i><p>Could not load videos.</p><p style="margin-top:8px"><a href="#" onclick="location.reload();return false" class="tg-join-btn"><i class="fas fa-redo"></i> Reload</a></p></div>';
+        });
+}
+
+function hidePreloader() {
+    if (state._preloaderTimeout) { clearTimeout(state._preloaderTimeout); state._preloaderTimeout = null; }
+    const p = $('preloader'); p.classList.add('fade-out');
+    setTimeout(() => { p.style.display = 'none'; }, 600);
+}
+
+// ===== RENDER HOME =====
+function renderHome() {
+    if (!state.videos.length) return;
+    const home = $('panelHome'); home.innerHTML = '';
+    state.tags.slice(0, 12).forEach(tag => {
+        const name = tagName(tag);
+        const vids = getVideosByTag(name).sort((a,b) => (b.id||0) - (a.id||0)).slice(0, 8);
+        if (!vids.length) return;
+        const sec = document.createElement('div');
+        sec.innerHTML = '<div class="section-header"><h2>' + escHtml(name) + '</h2>' +
+            '<a class="see-all" data-tag="' + escAttr(name) + '">See all</a></div>' +
+            '<div class="video-grid">' + vids.map(v => cardHtml(v)).join('') + '</div>';
+        home.appendChild(sec);
+    });
+    bindCardClicks(home);
+    home.querySelectorAll('.see-all').forEach(a => {
+        a.addEventListener('click', e => { e.preventDefault(); showAllByTag(a.dataset.tag); });
+    });
+}
+
+function renderCategories() {
+    const grid = $('catGrid'); grid.innerHTML = '';
+    state.tags.forEach(tag => {
+        const name = tagName(tag);
+        const iconCls = tagIcon(tag);
+        const sample = state.videos.find(v => v.tag && v.tag.toLowerCase().includes(name.toLowerCase()));
+        const count = getVideosByTag(name).length;
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        card.innerHTML = '<div class="thumb-wrap">' +
+            (sample ? '<img src="' + escAttr(sample.img || '') + '" alt="' + escAttr(name) + '" loading="lazy">' :
+            '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#333;font-size:32px;color:#888"><i class="' + escAttr(iconCls) + '"></i></div>') +
+            '</div><div class="card-info"><h3 class="card-title">' + escHtml(name) + '</h3>' +
+            '<p style="font-size:12px;color:var(--text-muted)">' + count + ' videos</p></div>';
+        card.addEventListener('click', () => showAllByTag(name));
+        grid.appendChild(card);
+    });
+}
+
+function showAllByTag(tag) {
+    // Navigate to home with skipRender so renderHome() doesn't overwrite our filtered view
+    navigateTo('home', { skipRender: true });
+    const home = $('panelHome');
+    const vids = getVideosByTag(tag).sort((a,b) => (b.id||0) - (a.id||0));
+    if (!vids.length) {
+        home.innerHTML = '<div class="section-header"><h2>' + escHtml(tag) + '</h2></div>' +
+            '<div class="no-results"><i class="fas fa-film" style="font-size:48px;color:var(--text-muted);margin-bottom:12px"></i><p>No videos in this category yet.</p></div>';
+    } else {
+        home.innerHTML = '<div class="section-header"><h2>' + escHtml(tag) + '</h2></div>' +
+            '<div class="video-grid">' + vids.map(v => cardHtml(v)).join('') + '</div>';
+    }
+    bindCardClicks(home);
+    // Show back button so user can return to full home
+    $('backBtn').style.display = 'flex';
+    state.prevPanel = 'home';
+    // Show native back button to return to full home view
+    if (window.TMA && TMA.BackButton) {
+        TMA.BackButton.show(() => { renderHome(); $('backBtn').style.display = 'none'; TMA.BackButton.hide(); });
+    }
+    if (window.TMA && TMA.haptic) TMA.haptic.selection();
+}
+
+// ===== VIDEO CARD =====
+function cardHtml(v) {
+    if (!v || v.id === undefined || v.id === null) return '';
+    const vidId = Number(v.id);
+    const purchased = !isNaN(vidId) && state.userData.purchased.includes(vidId);
+    return '<div class="video-card" data-id="' + escAttr(String(v.id)) + '">' +
+        '<div class="thumb-wrap">' +
+        '<img src="' + escAttr(v.img || '') + '" alt="' + escAttr(v.name || '') + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        (purchased ? '' : '<div class="thumb-price"><i class="fas fa-coins"></i> ' + (v.amount || 0) + '</div>') +
+        '<div class="thumb-duration">' + escHtml(v.time || '') + '</div>' +
+        '<div class="thumb-overlay"><i class="fas fa-play"></i></div>' +
+        '</div><div class="card-info"><h3 class="card-title">' + escHtml(v.name || '') + '</h3></div></div>';
+}
+
+function bindCardClicks(container) {
+    container.querySelectorAll('.video-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const rawId = card.dataset.id;
+            // Try numeric match first, fall back to string match
+            const numericId = parseInt(rawId, 10);
+            let video;
+            if (!isNaN(numericId)) {
+                video = state.videos.find(v => Number(v.id) === numericId);
+            }
+            if (!video) {
+                video = state.videos.find(v => String(v.id) === String(rawId));
+            }
+            if (video) showVideoDetails(video);
+        });
+    });
+}
+
+// ===== VIDEO DETAILS =====
+function showVideoDetails(video) {
+    state.currentVideo = video; resetPlayer();
+    $('playerThumb').src = video.img || '';
+    $('playerPreview').style.display = 'flex';
+    $('bigPlayBtn').style.display = 'block';
+    $('detailTitle').textContent = video.name || '';
+    $('detailTags').innerHTML = (video.tag || '').split(',').map(t =>
+        '<span class="detail-tag">' + escHtml(t.trim()) + '</span>').join('');
+    $('detailTags').querySelectorAll('.detail-tag').forEach(tag => {
+        tag.addEventListener('click', () => showAllByTag(tag.textContent));
+    });
+    const info = video.info || [];
+    $('detailDesc').innerHTML = Array.isArray(info) ? info.map(l => '<p>' + escHtml(l) + '</p>').join('') : '<p>' + escHtml(String(info)) + '</p>';
+    $('detailDesc').classList.remove('expanded');
+    $('descToggle').textContent = 'Show more';
+    $('shareBox').classList.remove('visible');
+    updateFavBtn(); loadRelated(video);
+    state.prevPanel = state.currentPanel === 'player' ? state.prevPanel : state.currentPanel;
+    navigateTo('player');
+}
+
+function updateFavBtn() {
+    const btn = $('favBtn'); if (!state.currentVideo) return;
+    const vidId = Number(state.currentVideo.id);
+    const isFav = !isNaN(vidId) && state.userData.favorites.includes(vidId);
+    btn.className = 'fav-btn' + (isFav ? ' active' : '');
+    btn.innerHTML = '<i class="' + (isFav ? 'fas' : 'far') + ' fa-heart"></i> ' + (isFav ? 'Favorited' : 'Favorite');
+}
+
+// ===== VIDEO PLAY / EMBED =====
+function handlePlayClick() {
+    if (!state.currentVideo) return;
+    const vidId = Number(state.currentVideo.id);
+    const purchased = !isNaN(vidId) && state.userData.purchased.includes(vidId);
+    if (purchased) playInline(state.currentVideo);
+    else showPurchaseModal(state.currentVideo);
+}
+
+function playInline(video) {
+    const resolved = resolveVideoUrl(video.url);
+    $('playerPreview').style.display = 'none';
+    $('playerClose').style.display = 'flex';
+    $('playerLoading').classList.add('active');
+    $('playerError').classList.remove('active');
+    const existing = $('playerWrapper').querySelector('video,iframe');
+    if (existing) existing.remove();
+
+    if (resolved.isDirectVideo) {
+        const vid = document.createElement('video');
+        vid.src = resolved.url; vid.controls = true; vid.autoplay = true; vid.playsInline = true;
+        vid.setAttribute('playsinline',''); vid.setAttribute('webkit-playsinline','');
+        vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:2;background:#000;';
+        vid.addEventListener('canplay', () => $('playerLoading').classList.remove('active'));
+        vid.addEventListener('waiting', () => $('playerLoading').classList.add('active'));
+        vid.addEventListener('playing', () => $('playerLoading').classList.remove('active'));
+        vid.addEventListener('error', () => {
+            $('playerLoading').classList.remove('active');
+            showError('The video could not be loaded. The link may have expired.', resolved.url);
+        });
+        $('playerWrapper').appendChild(vid);
+    } else {
+        const iframe = document.createElement('iframe');
+        iframe.src = resolved.url;
+        iframe.setAttribute('allowfullscreen','');
+        iframe.setAttribute('allow','autoplay; encrypted-media; fullscreen; picture-in-picture');
+        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2;';
+        iframe.addEventListener('load', () => { $('playerLoading').classList.remove('active'); clearTimeout(state._loadTimeout); });
+        iframe.addEventListener('error', () => { $('playerLoading').classList.remove('active'); showError('Could not embed this video.', resolved.url); });
+        $('playerWrapper').appendChild(iframe);
+    }
+
+    state._loadTimeout = setTimeout(() => {
+        if ($('playerLoading').classList.contains('active')) $('playerLoading').classList.remove('active');
+    }, 30000);
+}
+
+function showError(msg, directUrl) {
+    $('playerError').classList.add('active'); $('playerLoading').classList.remove('active');
+    $('playerErrorMsg').textContent = msg;
+    if (directUrl) { $('playerErrorLink').href = directUrl; $('playerErrorLink').style.display = 'inline-block'; }
+    else { $('playerErrorLink').style.display = 'none'; }
+}
+
+function closePlayer() {
+    resetPlayer();
+    if (state.currentVideo) { $('playerPreview').style.display = 'flex'; $('playerThumb').src = state.currentVideo.img || ''; $('bigPlayBtn').style.display = 'block'; }
+    $('playerClose').style.display = 'none';
+}
+
+function resetPlayer() {
+    const vid = $('playerWrapper').querySelector('video');
+    const iframe = $('playerWrapper').querySelector('iframe');
+    if (vid) {
+        try { vid.pause(); } catch (e) {}
+        vid.src = '';
+        try { vid.load(); } catch (e) {}
+        vid.remove();
+    }
+    if (iframe) {
+        try { iframe.src = 'about:blank'; } catch (e) {}
+        iframe.remove();
+    }
+    $('playerPreview').style.display = 'none';
+    $('playerClose').style.display = 'none';
+    $('playerLoading').classList.remove('active');
+    $('playerError').classList.remove('active');
+    clearTimeout(state._loadTimeout);
+}
+
+// ===== URL RESOLUTION =====
+function resolveVideoUrl(url) {
+    if (!url) return { url:'', isDirectVideo:false };
+    let resolvedUrl = url, isDirectVideo = false;
+    const mp4Match = url.match(/\/1tera\/mp4(?:\.html)?\?q=(.+)$/i);
+    if (mp4Match) { resolvedUrl = decodeURIComponent(mp4Match[1]); isDirectVideo = true; }
+    const tvMatch = url.match(/\/1tera\/tv\.html\?q=(.+)$/i);
+    if (tvMatch && !isDirectVideo) { return resolveVideoUrl(decodeURIComponent(tvMatch[1])); }
+    const gdMatch = url.match(/\/1tera\/gd(?:\.html)?\?q=(.+)$/i);
+    if (gdMatch && !isDirectVideo) { resolvedUrl = 'https://drive.google.com/file/d/' + decodeURIComponent(gdMatch[1]) + '/preview'; }
+    if (!isDirectVideo && /\.(mp4|webm|ogg|m3u8)(\?|$)/i.test(resolvedUrl)) isDirectVideo = true;
+    if (!isDirectVideo) {
+        if (/blogger\.com\/video\.g/i.test(resolvedUrl)) { /* as-is */ }
+        else if (/blogspot\.com\/\d{4}\/\d{2}\//i.test(resolvedUrl)) { /* as-is */ }
+        else if (/terabox\.com\/s\//i.test(resolvedUrl) || /1024terabox\.com\/s\//i.test(resolvedUrl)) {
+            resolvedUrl = '1tera/tv.html?q=' + encodeURIComponent(resolvedUrl);
+        }
+        else if (/abyssplayer\.com/i.test(resolvedUrl)) { /* as-is */ }
+        else if (/rumble\.com/i.test(resolvedUrl) && !/rumble\.com\/embed/i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/rumble\.com\/([^?]+)/i);
+            if (m) resolvedUrl = 'https://rumble.com/embed/' + m[1];
+        }
+        else if (/youtube\.com\/watch/i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/[?&]v=([^&]+)/); if (m) resolvedUrl = 'https://www.youtube.com/embed/' + m[1];
+        }
+        else if (/youtu\.be\//i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/youtu\.be\/([^?]+)/); if (m) resolvedUrl = 'https://www.youtube.com/embed/' + m[1];
+        }
+        else if (/drive\.google\.com\/file\/d\/([\w-]+)/i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/drive\.google\.com\/file\/d\/([\w-]+)/i);
+            if (m) resolvedUrl = 'https://drive.google.com/file/d/' + m[1] + '/preview';
+        }
+        else if (/vimeo\.com\/(\d+)/i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/vimeo\.com\/(\d+)/i); if (m) resolvedUrl = 'https://player.vimeo.com/video/' + m[1];
+        }
+        else if (/dailymotion\.com\/video\/([\w]+)/i.test(resolvedUrl)) {
+            const m = resolvedUrl.match(/dailymotion\.com\/video\/([\w]+)/i); if (m) resolvedUrl = 'https://www.dailymotion.com/embed/video/' + m[1];
+        }
+    }
+    return { url:resolvedUrl, isDirectVideo };
+}
+
+// ===== PURCHASE =====
+function showPurchaseModal(video) {
+    state.videoForPurchase = video;
+    $('modalThumb').src = video.img || '';
+    $('modalTitle').textContent = video.name || '';
+    $('modalPrice').textContent = video.amount || 0;
+    $('purchaseModal').classList.add('active');
+    // Haptic feedback when modal opens
+    if (window.TMA && TMA.haptic) TMA.haptic.medium();
+    // Hide MainButton while modal is open to avoid duplicate actions
+    if (window.TMA && TMA.MainButton) TMA.MainButton.hide();
+}
+function closeModal2() { $('purchaseModal').classList.remove('active'); state.videoForPurchase = null; }
+
+function confirmPurchase() {
+    const video = state.videoForPurchase; if (!video) return;
+    state.userData.balance = Number(state.userData.balance) || 0;
+    const cost = Number(video.amount) || 0;
+    if (state.userData.balance >= cost) {
+        state.userData.balance -= cost;
+        const vidId = Number(video.id);
+        if (!isNaN(vidId) && !state.userData.purchased.includes(vidId)) {
+            state.userData.purchased.push(vidId);
+        }
+        addTransaction('spend','Purchased: ' + video.name, cost);
+        saveUserData(); updateBalance(); closeModal2();
+        playInline(video);
+        notify('Video purchased! Enjoy watching.','check-circle');
+        // Success haptic
+        if (window.TMA && TMA.haptic) TMA.haptic.success();
+    } else {
+        const needed = cost - state.userData.balance;
+        notify('You need ' + needed + ' more coins. Earn more!','exclamation-circle');
+        closeModal2();
+        // Error haptic
+        if (window.TMA && TMA.haptic) TMA.haptic.error();
+    }
+}
+
+// ===== RELATED =====
+function loadRelated(video) {
+    const tags = (video.tag || '').split(',').map(t => t.trim().toLowerCase());
+    const related = state.videos.filter(v => {
+        if (v.id === video.id) return false;
+        return (v.tag || '').split(',').map(t => t.trim().toLowerCase()).some(t => tags.includes(t));
+    }).slice(0, 8);
+    $('relatedGrid').innerHTML = related.map(v => cardHtml(v)).join('');
+    bindCardClicks($('relatedGrid'));
+}
+
+// ===== FAVORITES =====
+function toggleFavorite() {
+    if (!state.currentVideo) return;
+    const id = Number(state.currentVideo.id);
+    if (isNaN(id)) return;
+    const idx = state.userData.favorites.indexOf(id);
+    if (idx === -1) {
+        state.userData.favorites.push(id);
+        notify('Added to favorites','heart');
+        if (window.TMA && TMA.haptic) TMA.haptic.success();
+    } else {
+        state.userData.favorites.splice(idx, 1);
+        notify('Removed from favorites','heart-broken');
+        if (window.TMA && TMA.haptic) TMA.haptic.light();
+    }
+    saveUserData(); updateFavBtn();
+}
+
+// ===== SEARCH =====
+function toggleSearch() {
+    state.isSearchActive = !state.isSearchActive;
+    if (state.isSearchActive) {
+        $('searchWrap').classList.add('active'); $('logoWrap').classList.add('hidden');
+        $('searchInput').focus();
+    } else {
+        $('searchWrap').classList.remove('active'); $('logoWrap').classList.remove('hidden');
+        $('searchInput').value = '';
+        if (state.currentPanel === 'home') renderHome();
+    }
+}
+
+function searchVideos() {
+    const q = $('searchInput').value.toLowerCase().trim();
+    if (!q) { renderHome(); return; }
+    navigateTo('home', { skipRender: true });
+    const home = $('panelHome');
+    const results = state.videos.filter(v =>
+        (v.name || '').toLowerCase().includes(q) || (v.tag || '').toLowerCase().includes(q));
+    let html = '<div class="section-header"><h2>Search: "' + escHtml(q) + '"</h2></div>';
+    html += results.length ?
+        '<div class="video-grid">' + results.map(v => cardHtml(v)).join('') + '</div>' :
+        '<div class="no-results"><p>No videos found</p><a class="tg-join-btn" href="https://t.me/+mTx9md_aBSwwYTI1" target="_blank" rel="noopener"><i class="fab fa-telegram"></i> Request Group</a></div>';
+    home.innerHTML = html; bindCardClicks(home);
+}
+
+// ===== EARN PANEL =====
+function renderEarnPanel() { updateDailyCheckin(); renderHistory(); }
+
+function watchAd() {
+    const today = new Date().toDateString();
+    if (state.userData.lastAdDate !== today) { state.userData.adWatchedToday = 0; state.userData.lastAdDate = today; }
+    if (state.userData.adWatchedToday >= 10) {
+        notify('Daily ad limit reached (10/day)','exclamation-circle');
+        if (window.TMA && TMA.haptic) TMA.haptic.warning();
+        return;
+    }
+    const btn = $('watchAdBtn');
+    btn.classList.add('disabled'); btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading Ad...';
+    // Show MainButton progress
+    if (window.TMA && TMA.MainButton && TMA.isTelegram) {
+        TMA.MainButton.show('Watching Ad...', () => {}, {});
+        TMA.MainButton.showProgress(true);
+    }
+    // Try to call monetization ad function if loaded
+    try { if (typeof window.show_9615963 === 'function') window.show_9615963(); } catch(e) { /* silent */ }
+    setTimeout(() => {
+        // Ensure balance is numeric
+        state.userData.balance = Number(state.userData.balance) || 0;
+        state.userData.balance += 5;
+        state.userData.adWatchedToday = Number(state.userData.adWatchedToday) || 0;
+        state.userData.adWatchedToday++;
+        addTransaction('earn','Watched Ad',5); saveUserData(); updateBalance();
+        btn.classList.remove('disabled'); btn.innerHTML = '<i class="fas fa-play-circle"></i> Watch Ad &amp; Earn';
+        notify('+5 coins earned!','coins');
+        if (window.TMA && TMA.haptic) TMA.haptic.success();
+        // Update MainButton
+        if (window.TMA && TMA.MainButton && TMA.isTelegram) {
+            TMA.MainButton.hideProgress();
+            updateMainButtonForPage('earn');
+        }
+    }, 3000);
+}
+
+function updateDailyCheckin() {
+    const today = new Date().toDateString();
+    const alreadyChecked = state.userData.lastCheckIn === today;
+    const streak = state.userData.streak || 0;
+    const cal = $('streakCalendar');
+    const days = ['M','T','W','T','F','S','S'];
+    cal.innerHTML = days.map((d, i) => {
+        const isActive = i < (streak % 7);
+        const isToday = i === (new Date().getDay() + 6) % 7;
+        return '<div class="day-icon' + (isActive ? ' active' : '') + (isToday ? ' today' : '') + '">' + d + '</div>';
+    }).join('');
+    $('streakProgress').style.width = ((streak % 7) / 7 * 100) + '%';
+    $('streakCount').textContent = streak + ' day streak';
+    const btn = $('dailyCheckinBtn');
+    if (alreadyChecked) { btn.classList.add('disabled'); btn.innerHTML = '<i class="fas fa-check"></i> Checked In Today'; }
+    else { btn.classList.remove('disabled'); btn.innerHTML = '<i class="fas fa-gift"></i> Check In Today (+' + Math.min(streak + 1, 7) + ' coins)'; }
+}
+
+function dailyCheckin() {
+    const today = new Date().toDateString();
+    if (state.userData.lastCheckIn === today) {
+        notify('Already checked in today!','info-circle');
+        if (window.TMA && TMA.haptic) TMA.haptic.warning();
+        return;
+    }
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    state.userData.streak = Number(state.userData.streak) || 0;
+    state.userData.streak = (state.userData.lastCheckIn === yesterday.toDateString()) ? state.userData.streak + 1 : 1;
+    const bonus = Math.min(state.userData.streak, 7);
+    state.userData.balance = Number(state.userData.balance) || 0;
+    state.userData.balance += bonus;
+    state.userData.lastCheckIn = today;
+    addTransaction('earn','Daily Check-in (Day ' + state.userData.streak + ')', bonus);
+    saveUserData(); updateBalance(); updateDailyCheckin();
+    notify('+' + bonus + ' coins! Day ' + state.userData.streak + ' streak','check-circle');
+    if (window.TMA && TMA.haptic) TMA.haptic.success();
+}
+
+function addTransaction(type, title, amount) {
+    state.userData.transactions.unshift({ type, title, amount, time: new Date().toISOString() });
+    if (state.userData.transactions.length > 50) state.userData.transactions = state.userData.transactions.slice(0, 50);
+}
+
+function renderHistory() {
+    const list = $('historyList');
+    const txns = state.userData.transactions || [];
+    if (!txns.length) { list.innerHTML = '<div class="no-results" style="padding:20px"><p>No transactions yet</p></div>'; return; }
+    list.innerHTML = txns.slice(0, 20).map(t => {
+        const isEarn = t.type === 'earn';
+        return '<div class="history-item">' +
+            '<div class="history-type ' + t.type + '"><i class="fas fa-' + (isEarn ? 'arrow-down' : 'arrow-up') + '"></i></div>' +
+            '<div class="history-info"><div class="h-title">' + escHtml(t.title) + '</div><div class="h-time">' + (t.time ? new Date(t.time).toLocaleDateString() : '') + '</div></div>' +
+            '<div class="history-amount ' + (isEarn ? 'plus' : 'minus') + '">' + (isEarn ? '+' : '-') + t.amount + '</div></div>';
+    }).join('');
+}
+
+// ===== GIFT PANEL =====
+function renderGiftPanel() {
+    $('giftCodeInput').value = ''; $('redeemResult').innerHTML = '';
+    if (!state._giftTabsBound) {
+        state._giftTabsBound = true;
+        document.querySelectorAll('.gift-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.gift-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const gtab = tab.dataset.gtab;
+                $('giftRedeem').style.display = gtab === 'redeem' ? 'block' : 'none';
+                $('giftHistory').style.display = gtab === 'history' ? 'block' : 'none';
+                if (gtab === 'history') renderGiftHistory();
+            });
+        });
+    }
+}
+
+function redeemGiftCode() {
+    const code = $('giftCodeInput').value.trim().toUpperCase();
+    if (!code) { notify('Please enter a gift code','exclamation-circle'); if (window.TMA && TMA.haptic) TMA.haptic.warning(); return; }
+    const resultDiv = $('redeemResult');
+    resultDiv.innerHTML = '<p style="color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Checking...</p>';
+    if (!db) { resultDiv.innerHTML = '<p style="color:var(--danger)"><i class="fas fa-times-circle"></i> Database not connected</p>'; if (window.TMA && TMA.haptic) TMA.haptic.error(); return; }
+
+    // Use Firebase transaction for atomic redemption (prevents race condition where
+    // two users could redeem the same code simultaneously)
+    const giftRef = db.ref('gifts/' + code);
+    giftRef.transaction(function(currentData) {
+        if (currentData === null) return null; // code does not exist
+        if (currentData.status !== 'active') return; // already used — abort transaction
+        currentData.status = 'used';
+        currentData.redeemedBy = state.userId || 'guest';
+        currentData.redeemedAt = Date.now();
+        return currentData;
+    }).then(function(result) {
+        if (result.committed === false || result.snapshot.val() === null) {
+            // Transaction did not commit — either code didn't exist or was already used
+            giftRef.once('value').then(function(snap) {
+                const data = snap.val();
+                if (!data) {
+                    resultDiv.innerHTML = '<p style="color:var(--danger)"><i class="fas fa-times-circle"></i> Invalid code</p>';
+                    if (window.TMA && TMA.haptic) TMA.haptic.error();
+                } else if (data.status !== 'active') {
+                    resultDiv.innerHTML = '<p style="color:var(--warning)"><i class="fas fa-ban"></i> Code already used</p>';
+                    if (window.TMA && TMA.haptic) TMA.haptic.warning();
+                } else {
+                    resultDiv.innerHTML = '<p style="color:var(--danger)"><i class="fas fa-times-circle"></i> Could not redeem. Please try again.</p>';
+                    if (window.TMA && TMA.haptic) TMA.haptic.error();
+                }
+            });
+            return;
+        }
+
+        const data = result.snapshot.val();
+        const amount = Number(data.amount) || 0;
+        state.userData.balance = Number(state.userData.balance) || 0;
+        state.userData.balance += amount;
+        addTransaction('earn','Gift Code: ' + code, amount);
+        if (!Array.isArray(state.userData.giftHistory)) state.userData.giftHistory = [];
+        state.userData.giftHistory.unshift({ code, amount, time:new Date().toISOString() });
+        if (state.userData.giftHistory.length > 50) state.userData.giftHistory = state.userData.giftHistory.slice(0, 50);
+        saveUserData(); updateBalance();
+        resultDiv.innerHTML = '<p style="color:var(--success)"><i class="fas fa-check-circle"></i> +' + amount + ' coins redeemed!</p>';
+        $('giftCodeInput').value = '';
+        notify('+' + amount + ' coins from gift code!','gift');
+        if (window.TMA && TMA.haptic) TMA.haptic.success();
+        // Update MainButton label since user now has more coins
+        updateMainButtonForPage('gift');
+    }).catch(function(err) {
+        resultDiv.innerHTML = '<p style="color:var(--danger)"><i class="fas fa-times-circle"></i> Error: ' + escHtml(err.message) + '</p>';
+        if (window.TMA && TMA.haptic) TMA.haptic.error();
+    });
+}
+
+function renderGiftHistory() {
+    const list = $('giftHistoryList');
+    const history = state.userData.giftHistory || [];
+    if (!history.length) { list.innerHTML = '<div class="no-results" style="padding:20px"><p>No gift code history</p></div>'; return; }
+    list.innerHTML = history.map(h =>
+        '<div class="history-item">' +
+        '<div class="history-type earn"><i class="fas fa-gift"></i></div>' +
+        '<div class="history-info"><div class="h-title">' + escHtml(h.code) + '</div><div class="h-time">' + (h.time ? new Date(h.time).toLocaleDateString() : '') + '</div></div>' +
+        '<div class="history-amount plus">+' + h.amount + '</div></div>'
+    ).join('');
+}
+
+// ===== PROFILE =====
+function updateProfilePanel() {
+    const tg = state.tgUser;
+    if (tg) {
+        $('profileName').textContent = (tg.first_name || '') + ' ' + (tg.last_name || '');
+        $('profileUsername').textContent = tg.username ? '@' + tg.username : 'No username';
+        $('profileTgId').textContent = 'ID: ' + tg.id;
+        if (tg.photo_url) { $('profileAvatar').src = tg.photo_url; $('profileAvatar').style.display = 'block'; $('profileAvatarPlaceholder').style.display = 'none'; }
+    } else if (state.userData && state.userData.firstName) {
+        // Browser user — show stored user data
+        $('profileName').textContent = (state.userData.firstName || 'Browser') + ' ' + (state.userData.lastName || 'User');
+        $('profileUsername').textContent = state.isTelegramApp ? 'No username' : 'Browser User';
+        $('profileTgId').textContent = 'ID: ' + state.userId;
+    }
+    $('profileBalance').textContent = state.userData.balance;
+    $('profileFavorites').textContent = (state.userData.favorites || []).length;
+    $('profilePurchased').textContent = (state.userData.purchased || []).length;
+    $('profileStreak').textContent = state.userData.streak || 0;
+}
+
+// ===== SHARE =====
+function generateShareUrl(videoId) {
+    const baseUrl = window.location.origin + window.location.pathname;
+    return baseUrl + '?v=' + videoId;
+}
+
+function handleShare() {
+    if (!state.currentVideo) return;
+    const shareUrl = generateShareUrl(state.currentVideo.id);
+    $('shareText').textContent = shareUrl; $('shareBox').classList.add('visible');
+    // Use TMA SDK share (works with Telegram's native share sheet)
+    if (window.TMA && TMA.Share) {
+        const video = state.currentVideo;
+        const shareText = '🎬 ' + (video.name || 'Check out this video') + ' on All Video Hub!';
+        TMA.Share.shareUrl(shareUrl, shareText).then(() => {
+            notify('Share sheet opened', 'share');
+        }).catch(() => {
+            // Already showed share box above
+        });
+    } else if (state.isTelegramApp && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.switchInlineQuery) {
+        window.Telegram.WebApp.switchInlineQuery('video_' + state.currentVideo.id);
+    }
+}
+
+function handleCopy() {
+    const text = $('shareText').textContent; if (!text) return;
+    copyToClipboard(text).then(() => notify('Link copied!','check-circle')).catch(() => notify('Failed to copy','exclamation-circle'));
+}
+
+// ===== HELPERS =====
+function updateBalance() { $('balanceText').textContent = state.userData.balance; }
+function toggleDesc() { $('detailDesc').classList.toggle('expanded'); $('descToggle').textContent = $('detailDesc').classList.contains('expanded') ? 'Show less' : 'Show more'; }
+function updateOnlineStatus() { if (navigator.onLine) $('offlineBanner').classList.remove('visible'); else { $('offlineBanner').classList.add('visible'); notify('You are offline','exclamation-circle'); } }
+function getVideosByTag(tag) { return state.videos.filter(v => (v.tag || '').toLowerCase().includes(tag.toLowerCase())); }
+
+function notify(msg, icon) {
+    const el = document.createElement('div'); el.className = 'notif';
+    const safeIcon = String(icon).replace(/[^a-z0-9-]/gi,'');
+    el.innerHTML = '<i class="fas fa-' + safeIcon + '"></i><span>' + escHtml(msg) + '</span>';
+    $('notifContainer').appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 4000);
+    // Haptic feedback for notifications (light impact)
+    if (window.TMA && TMA.haptic) {
+        // Choose haptic based on icon: error/warning get stronger feedback
+        if (safeIcon.indexOf('exclamation') !== -1 || safeIcon.indexOf('times') !== -1) TMA.haptic.warning();
+        else if (safeIcon.indexOf('check') !== -1) TMA.haptic.success();
+        else TMA.haptic.light();
+    }
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ================================================================
+// ADMIN PANEL - FULLY INTEGRATED IN SAME WINDOW
+// ================================================================
+
+// Admin auth - password stored in Firebase, session in memory only
+const DEFAULT_ADMIN_PASS = 'admin123';
+let _adminAuthSession = false; // In-memory session only (not persisted)
+
+function getAdminPass() {
+    // Default password - actual password comes from Firebase settings/adminPassword
+    return state._adminFirebasePass || DEFAULT_ADMIN_PASS;
+}
+function isAdminAuth() { return _adminAuthSession; }
+
+function initAdminPanel() {
+    if (isAdminAuth()) {
+        $('adminLogin').style.display = 'none';
+        $('adminDashboard').style.display = 'block';
+        initAdminListeners();
+    } else {
+        $('adminLogin').style.display = 'block';
+        $('adminDashboard').style.display = 'none';
+    }
+    bindAdminEvents();
+}
+
+function bindAdminEvents() {
+    // Login
+    $('adminLoginBtn').addEventListener('click', doAdminLogin);
+    $('adminPassInput').addEventListener('keyup', e => { if (e.key === 'Enter') doAdminLogin(); });
+
+    // Tabs
+    if (!state._adminTabsBound) {
+        state._adminTabsBound = true;
+        $('adminTabs').addEventListener('click', e => {
+            const tab = e.target.closest('.admin-tab');
+            if (!tab) return;
+            const atab = tab.dataset.atab;
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.admin-sub-panel').forEach(p => p.classList.remove('active'));
+            const panel = $('adminTab-' + atab);
+            if (panel) panel.classList.add('active');
+        });
+    }
+
+    // Video CRUD
+    $('aVideoSubmitBtn').addEventListener('click', adminSaveVideo);
+    $('aVideoCancelBtn').addEventListener('click', adminResetVideoForm);
+    $('aVideoSearch').addEventListener('input', adminRenderVideos);
+    $('aVideoTbody').addEventListener('click', adminVideoActions);
+
+    // Category
+    $('aCatAddBtn').addEventListener('click', adminAddCategory);
+    $('aCatTbody').addEventListener('click', adminCatActions);
+
+    // Gift codes
+    $('aGiftCreateBtn').addEventListener('click', adminCreateGift);
+    $('aGiftSearch').addEventListener('input', adminRenderGifts);
+    $('aGiftTbody').addEventListener('click', adminGiftActions);
+
+    // Users
+    $('aUserSearch').addEventListener('input', adminRenderUsers);
+    $('aUserTbody').addEventListener('click', adminUserActions);
+
+    // Settings
+    $('aChangePassBtn').addEventListener('click', adminChangePass);
+    $('aLogoutBtn').addEventListener('click', adminLogout);
+
+    // Seed Demo Data
+    $('aSeedDataBtn').addEventListener('click', adminSeedDemoData);
+
+    // Modal close buttons
+    $('aConfirmClose').addEventListener('click', () => $('aConfirmModal').classList.remove('open'));
+    $('aConfirmCancelBtn').addEventListener('click', () => $('aConfirmModal').classList.remove('open'));
+    $('aBalanceClose').addEventListener('click', () => $('aBalanceModal').classList.remove('open'));
+    $('aBalanceCancelBtn').addEventListener('click', () => $('aBalanceModal').classList.remove('open'));
+    $('aBalanceSaveBtn').addEventListener('click', adminSaveBalance);
+
+    // Category Edit Modal
+    $('aCatClose').addEventListener('click', () => $('aCategoryModal').classList.remove('open'));
+    $('aCatCancelBtn').addEventListener('click', () => $('aCategoryModal').classList.remove('open'));
+    $('aCatSaveBtn').addEventListener('click', adminSaveEditCategory);
+    $('aCatNameInput').addEventListener('input', adminUpdateCatPreview);
+    $('aCatIconInput').addEventListener('input', adminUpdateCatPreview);
+    $('aCatNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('aCatIconInput').focus(); });
+    $('aCatIconInput').addEventListener('keydown', e => { if (e.key === 'Enter') adminSaveEditCategory(); });
+
+    // Close modals on overlay click
+    [$('aConfirmModal'), $('aBalanceModal'), $('aCategoryModal')].forEach(overlay => {
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+    });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            $('aConfirmModal').classList.remove('open');
+            $('aBalanceModal').classList.remove('open');
+            $('aCategoryModal').classList.remove('open');
+        }
+    });
+}
+
+function doAdminLogin() {
+    const pass = $('adminPassInput').value;
+    // Check against Firebase stored password first, then default
+    if (db) {
+        db.ref('settings/adminPassword').once('value').then(snap => {
+            const firebasePass = snap.val();
+            state._adminFirebasePass = firebasePass || DEFAULT_ADMIN_PASS;
+            if (pass === state._adminFirebasePass) {
+                _adminAuthSession = true;
+                $('adminLoginError').style.display = 'none';
+                $('adminLogin').style.display = 'none';
+                $('adminDashboard').style.display = 'block';
+                initAdminListeners();
+                adminToast('Welcome, Admin!', 'success');
+            } else {
+                $('adminLoginError').style.display = 'block';
+            }
+        }).catch(() => {
+            // Fallback to default if Firebase fails
+            if (pass === DEFAULT_ADMIN_PASS) {
+                _adminAuthSession = true;
+                $('adminLoginError').style.display = 'none';
+                $('adminLogin').style.display = 'none';
+                $('adminDashboard').style.display = 'block';
+                initAdminListeners();
+                adminToast('Welcome, Admin!', 'success');
+            } else {
+                $('adminLoginError').style.display = 'block';
+            }
+        });
+    } else {
+        // No Firebase - use default
+        if (pass === DEFAULT_ADMIN_PASS) {
+            _adminAuthSession = true;
+            $('adminLoginError').style.display = 'none';
+            $('adminLogin').style.display = 'none';
+            $('adminDashboard').style.display = 'block';
+            initAdminListeners();
+            adminToast('Welcome, Admin!', 'success');
+        } else {
+            $('adminLoginError').style.display = 'block';
+        }
+    }
+}
+
+function adminLogout() {
+    _adminAuthSession = false;
+    $('adminLogin').style.display = 'block';
+    $('adminDashboard').style.display = 'none';
+    $('adminPassInput').value = '';
+}
+
+// ===== SEED DEMO DATA =====
+// One-click setup: seeds 10 categories, 30 demo videos (3 per category),
+// 2 demo users, and sets the admin password to 'admin123'.
+function adminSeedDemoData() {
+    if (!db) { adminToast('Database not connected', 'error'); return; }
+
+    adminConfirm('Seed Demo Data',
+        'This will ADD the following to Firebase:<br><br>' +
+        '<ul style="text-align:left;display:inline-block;padding-left:20px;font-size:13px;line-height:1.8">' +
+        '<li><strong>10 categories</strong> (Hindi, Bangla, Action, Comedy, Romantic, Horror, Anime, Cartoon, Web Series, Viral)</li>' +
+        '<li><strong>30 demo videos</strong> (3 per category — public sample MP4s)</li>' +
+        '<li><strong>2 demo users</strong> with balance &amp; sample data</li>' +
+        '<li><strong>Admin password</strong> set to <code>admin123</code></li>' +
+        '</ul><br>' +
+        '<span style="color:var(--warning);font-size:12px"><i class="fas fa-exclamation-triangle"></i> Use only on a fresh database. Existing data with matching keys will be overwritten.</span>',
+        function() {
+            const btn = $('aSeedDataBtn');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Seeding...';
+            if (window.TMA && TMA.haptic) TMA.haptic.medium();
+
+            // Build all seed data
+            const updates = {};
+            const now = Date.now();
+
+            // 1) Categories
+            const categories = [
+                { name: 'Hindi',      icon: 'fas fa-language' },
+                { name: 'Bangla',     icon: 'fas fa-language' },
+                { name: 'Action',     icon: 'fas fa-bolt' },
+                { name: 'Comedy',     icon: 'fas fa-laugh' },
+                { name: 'Romantic',   icon: 'fas fa-heart' },
+                { name: 'Horror',     icon: 'fas fa-ghost' },
+                { name: 'Anime',      icon: 'fas fa-dragon' },
+                { name: 'Cartoon',    icon: 'fas fa-child' },
+                { name: 'Web Series', icon: 'fas fa-tv' },
+                { name: 'Viral',      icon: 'fas fa-fire' }
+            ];
+            updates['settings/categories'] = categories;
+
+            // 2) Admin password
+            updates['settings/adminPassword'] = 'admin123';
+
+            // 3) Videos — 3 per category (30 total)
+            // Use Google's public sample MP4s (cycled) + picsum.photos thumbnails
+            const sampleVideos = [
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
+                'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4'
+            ];
+            const movieNames = {
+                'Hindi':      ['Dilwale Dulhania', 'Kabhi Khushi Kabhie Gham', '3 Idiots'],
+                'Bangla':     ['Jongli', 'Priya Amar Priya', 'Bishwajit'],
+                'Action':     ['Mad Max: Fury Road', 'John Wick', 'Die Hard'],
+                'Comedy':     ['The Hangover', 'Dumb and Dumber', 'Superbad'],
+                'Romantic':   ['The Notebook', 'Titanic', 'La La Land'],
+                'Horror':     ['The Conjuring', 'Hereditary', 'A Quiet Place'],
+                'Anime':      ['Naruto Shippuden', 'One Piece', 'Attack on Titan'],
+                'Cartoon':    ['Tom & Jerry', 'SpongeBob', 'Adventure Time'],
+                'Web Series': ['Stranger Things', 'Breaking Bad', 'Money Heist'],
+                'Viral':      ['Trending Clip 01', 'Trending Clip 02', 'Trending Clip 03']
+            };
+            const durations = ['00:10:00', '00:15:30', '00:12:45', '00:08:20', '00:20:15', '00:05:30'];
+            let videoCounter = 0;
+            categories.forEach(function(cat) {
+                const names = movieNames[cat.name] || ['Demo Video 1', 'Demo Video 2', 'Demo Video 3'];
+                for (var i = 0; i < 3; i++) {
+                    videoCounter++;
+                    var vidId = String(now + videoCounter);
+                    var url = sampleVideos[(videoCounter - 1) % sampleVideos.length];
+                    var thumb = 'https://picsum.photos/seed/' + cat.name.toLowerCase().replace(/\s+/g, '') + i + '/320/180';
+                    var amount = (videoCounter % 5) + 1; // 1-5 coins
+                    updates['videos/' + vidId] = {
+                        id: vidId,
+                        name: names[i] || (cat.name + ' Video ' + (i + 1)),
+                        url: url,
+                        img: thumb,
+                        thumbnail: thumb,
+                        amount: amount,
+                        time: durations[i % durations.length],
+                        duration: durations[i % durations.length],
+                        tag: cat.name,
+                        tags: cat.name,
+                        info: [
+                            'Sample demo video for the "' + cat.name + '" category.',
+                            'This is auto-generated seed data. Replace it with real content via the Videos tab.',
+                            'Category: ' + cat.name + ' | Cost: ' + amount + ' coins'
+                        ],
+                        createdAt: now + videoCounter
+                    };
+                }
+            });
+
+            // 4) Users — 2 demo users
+            updates['users/demo_user_1'] = {
+                id: 'demo_user_1',
+                firstName: 'Demo',
+                lastName: 'User',
+                username: 'demouser',
+                photoUrl: '',
+                balance: 100,
+                purchased: [],
+                favorites: [],
+                lastCheckIn: null,
+                streak: 0,
+                adWatchedToday: 0,
+                lastAdDate: null,
+                transactions: [
+                    { type: 'earn', title: 'Welcome bonus', amount: 100, time: new Date().toISOString() }
+                ],
+                giftHistory: [],
+                createdAt: now
+            };
+            updates['users/demo_user_2'] = {
+                id: 'demo_user_2',
+                firstName: 'Test',
+                lastName: 'User',
+                username: 'testuser',
+                photoUrl: '',
+                balance: 50,
+                purchased: [],
+                favorites: [],
+                lastCheckIn: null,
+                streak: 0,
+                adWatchedToday: 0,
+                lastAdDate: null,
+                transactions: [
+                    { type: 'earn', title: 'Welcome bonus', amount: 50, time: new Date().toISOString() }
+                ],
+                giftHistory: [],
+                createdAt: now
+            };
+
+            // Push everything to Firebase in a single atomic update
+            db.ref().update(updates).then(function() {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                state._adminFirebasePass = 'admin123';
+                adminToast('Demo data seeded! 10 categories, 30 videos, 2 users, password = admin123', 'success');
+                if (window.TMA && TMA.haptic) TMA.haptic.success();
+                // Re-render admin views to show the new data
+                adminRenderCategories();
+                adminRenderVideos();
+                adminRenderUsers();
+                adminUpdateStats();
+            }).catch(function(err) {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                adminToast('Seed failed: ' + err.message, 'error');
+                if (window.TMA && TMA.haptic) TMA.haptic.error();
+                console.error('Seed error:', err);
+            });
+        });
+}
+
+// Admin toast
+function adminToast(msg, type) {
+    type = type || 'info';
+    const container = $('adminToastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'admin-toast ' + type;
+    const iconMap = { success:'fas fa-check-circle', error:'fas fa-exclamation-circle', info:'fas fa-info-circle' };
+    toast.innerHTML = '<i class="' + (iconMap[type] || iconMap.info) + '"></i><span>' + escHtml(msg) + '</span>';
+    container.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(40px)'; toast.style.transition = '.3s';
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+    }, 3000);
+}
+
+function adminConfirm(title, msg, callback) {
+    $('aConfirmTitle').textContent = title;
+    $('aConfirmMsg').innerHTML = msg;
+    state._aConfirmCallback = callback;
+    const newBtn = $('aConfirmOkBtn').cloneNode(true);
+    $('aConfirmOkBtn').parentNode.replaceChild(newBtn, $('aConfirmOkBtn'));
+    newBtn.id = 'aConfirmOkBtn';
+    newBtn.addEventListener('click', () => {
+        $('aConfirmModal').classList.remove('open');
+        if (state._aConfirmCallback) state._aConfirmCallback();
+    });
+    $('aConfirmModal').classList.add('open');
+}
+
+// Firebase listeners for admin
+function initAdminListeners() {
+    if (!db || state._adminListenersInit) return;
+    state._adminListenersInit = true;
+
+    db.ref('videos').off('value');
+    db.ref('videos').on('value', snap => {
+        state.adminVideosData = snap.val() || {};
+        adminRenderVideos(); adminUpdateStats(); adminRenderCategories();
+    }, err => console.error('Admin videos error:', err));
+
+    db.ref('gifts').off('value');
+    db.ref('gifts').on('value', snap => {
+        state.adminGiftsData = snap.val() || {};
+        adminRenderGifts(); adminUpdateStats();
+    }, err => console.error('Admin gifts error:', err));
+
+    db.ref('users').off('value');
+    db.ref('users').on('value', snap => {
+        state.adminUsersData = snap.val() || {};
+        adminRenderUsers(); adminUpdateStats();
+    }, err => console.error('Admin users error:', err));
+
+    // Categories — load from Firebase and merge with defaults
+    // Supports BOTH legacy string[] format AND new {name, icon}[] format
+    db.ref('settings/categories').off('value');
+    db.ref('settings/categories').on('value', snap => {
+        const c = snap.val();
+        if (c) {
+            const raw = Array.isArray(c) ? c : Object.values(c);
+            const normalized = raw.map(normalizeTag).filter(t => t.name);
+            if (normalized.length) {
+                state.tags = normalized;
+                // Re-render home + categories if user is on those panels
+                if (state.currentPanel === 'home' || state.currentPanel === 'categories') {
+                    renderHome();
+                    renderCategories();
+                }
+                adminRenderCategories();
+            }
+        }
+        // If no Firebase data, keep using default tags defined in state
+    }, err => console.error('Admin categories error:', err));
+}
+
+function adminUpdateStats() {
+    const vKeys = Object.keys(state.adminVideosData);
+    const gKeys = Object.keys(state.adminGiftsData);
+    const uKeys = Object.keys(state.adminUsersData);
+    let active = 0, totalCoins = 0;
+    gKeys.forEach(k => { const g = state.adminGiftsData[k]; if (g && g.status === 'active') active++; if (g && g.amount) totalCoins += Number(g.amount) || 0; });
+    $('aStatVideos').textContent = vKeys.length;
+    $('aStatCodes').textContent = gKeys.length;
+    $('aStatActive').textContent = active;
+    $('aStatUsers').textContent = uKeys.length;
+    $('aStatCoins').textContent = totalCoins.toLocaleString();
+}
+
+// ===== ADMIN VIDEO CRUD =====
+function adminRenderVideos() {
+    const tbody = $('aVideoTbody');
+    const q = ($('aVideoSearch').value || '').toLowerCase();
+    const keys = Object.keys(state.adminVideosData);
+    if (!keys.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-film"></i><p>No videos yet</p></div></td></tr>'; return; }
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const v = state.adminVideosData[k];
+        return (v.name||'').toLowerCase().includes(q) || (v.tags||v.tag||'').toLowerCase().includes(q) || String(k).toLowerCase().includes(q);
+    });
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No match</p></div></td></tr>'; return; }
+    tbody.innerHTML = filtered.map(k => {
+        const v = state.adminVideosData[k];
+        const tags = (v.tags||v.tag||'').split(',').filter(Boolean).map(t => '<span class="admin-tag">' + escHtml(t.trim()) + '</span>').join('');
+        const thumb = v.thumbnail || v.img || '';
+        const thumbHtml = thumb ? '<img src="' + escAttr(thumb) + '" class="admin-thumb-preview" onerror="this.style.display=\'none\'">' : '<i class="fas fa-image" style="color:var(--text-muted)"></i>';
+        return '<tr><td title="' + escAttr(k) + '">' + escHtml(String(k).substring(0,8)) + '</td><td>' + thumbHtml + '</td><td>' + escHtml((v.name||'').substring(0,25)) + '</td><td style="color:var(--warning)">' + (v.amount||0) + '</td><td>' + tags + '</td><td><div class="act-cell"><button class="admin-btn admin-btn-ghost admin-btn-sm a-edit-vid" data-id="' + escAttr(k) + '"><i class="fas fa-pen"></i></button><button class="admin-btn admin-btn-danger admin-btn-sm a-del-vid" data-id="' + escAttr(k) + '"><i class="fas fa-trash"></i></button></div></td></tr>';
+    }).join('');
+}
+
+function adminSaveVideo() {
+    const editId = $('aVideoEditId').value;
+    const name = $('aVideoName').value.trim();
+    const url = $('aVideoUrl').value.trim();
+    const thumb = $('aVideoThumb').value.trim();
+    const amount = parseInt($('aVideoAmount').value, 10);
+    const duration = $('aVideoDuration').value.trim();
+    const tags = $('aVideoTags').value.trim();
+    const info = $('aVideoInfo').value.trim();
+    if (!name || !url) { adminToast('Name and URL are required','error'); return; }
+    // Basic URL validation
+    try {
+        const u = new URL(url);
+        if (!['http:', 'https:'].includes(u.protocol)) throw new Error('bad protocol');
+    } catch (e) {
+        if (!/^(https?:\/\/|\/|1tera\/|anime\/)/i.test(url)) {
+            adminToast('Please enter a valid URL (http:// or https://)','error');
+            return;
+        }
+    }
+    const safeAmount = isNaN(amount) ? 0 : Math.max(0, Math.min(amount, 1000000));
+    const infoArr = info ? info.split('\n').map(l => l.trim()).filter(Boolean) : [];
+    const data = { name, url, thumbnail:thumb, img:thumb, amount: safeAmount, duration, time: duration, tags, tag:tags, info: infoArr };
+    if (editId) {
+        db.ref('videos/' + editId).update(data).then(() => { adminToast('Video updated','success'); adminResetVideoForm(); }).catch(e => adminToast('Error: ' + e.message,'error'));
+    } else {
+        const newId = String(Date.now());
+        data.createdAt = Date.now(); data.id = newId;
+        db.ref('videos/' + newId).set(data).then(() => { adminToast('Video added','success'); adminResetVideoForm(); }).catch(e => adminToast('Error: ' + e.message,'error'));
+    }
+}
+
+function adminResetVideoForm() {
+    $('aVideoEditId').value = '';
+    $('aVideoName').value = ''; $('aVideoUrl').value = ''; $('aVideoThumb').value = '';
+    $('aVideoAmount').value = ''; $('aVideoDuration').value = ''; $('aVideoTags').value = '';
+    $('aVideoInfo').value = '';
+    $('aVideoFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Add New Video';
+    $('aVideoSubmitText').textContent = 'Add Video';
+    $('aVideoCancelBtn').style.display = 'none';
+}
+
+function adminVideoActions(e) {
+    const editBtn = e.target.closest('.a-edit-vid');
+    const delBtn = e.target.closest('.a-del-vid');
+    if (editBtn) {
+        const id = editBtn.dataset.id;
+        const v = state.adminVideosData[id];
+        if (!v) return;
+        $('aVideoEditId').value = id;
+        $('aVideoName').value = v.name || '';
+        $('aVideoUrl').value = v.url || '';
+        $('aVideoThumb').value = v.thumbnail || v.img || '';
+        $('aVideoAmount').value = v.amount || 0;
+        $('aVideoDuration').value = v.duration || '';
+        $('aVideoTags').value = v.tags || v.tag || '';
+        $('aVideoInfo').value = v.info || '';
+        $('aVideoFormTitle').innerHTML = '<i class="fas fa-pen"></i> Edit Video';
+        $('aVideoSubmitText').textContent = 'Update';
+        $('aVideoCancelBtn').style.display = 'inline-flex';
+        $('aVideoFormCard').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    if (delBtn) {
+        const id = delBtn.dataset.id;
+        const v = state.adminVideosData[id];
+        adminConfirm('Delete Video', 'Delete <strong>' + escHtml(v ? v.name : id) + '</strong>? This cannot be undone.', () => {
+            db.ref('videos/' + id).remove().then(() => adminToast('Video deleted','success')).catch(e => adminToast('Error: ' + e.message,'error'));
+        });
+    }
+}
+
+// ===== ADMIN CATEGORIES =====
+function adminRenderCategories() {
+    const tbody = $('aCatTbody');
+    if (!state.tags.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="admin-empty"><i class="fas fa-tags"></i><p>No categories</p></div></td></tr>'; return; }
+    tbody.innerHTML = state.tags.map((tag, i) => {
+        const name = tagName(tag);
+        const iconCls = tagIcon(tag);
+        const count = Object.values(state.adminVideosData).filter(v => (v.tags||v.tag||'').toLowerCase().includes(name.toLowerCase())).length;
+        return '<tr><td>' + (i+1) + '</td>' +
+            '<td style="font-weight:600">' + escHtml(name) + '</td>' +
+            '<td><i class="' + escAttr(iconCls) + '" style="color:var(--admin-accent);font-size:16px"></i></td>' +
+            '<td>' + count + '</td>' +
+            '<td><div class="act-cell">' +
+                '<button class="admin-btn admin-btn-primary admin-btn-sm a-edit-cat" data-idx="' + i + '" title="Edit"><i class="fas fa-pen"></i></button>' +
+                '<button class="admin-btn admin-btn-danger admin-btn-sm a-del-cat" data-idx="' + i + '" data-cat="' + escAttr(name) + '" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '</div></td></tr>';
+    }).join('');
+}
+
+function adminAddCategory() {
+    const name = $('aCatName').value.trim();
+    const icon = $('aCatIcon').value.trim();
+    if (!name) { adminToast('Category name required','error'); return; }
+    // Check duplicate (case-insensitive) — works with string or object format
+    const exists = state.tags.some(t => tagName(t).toLowerCase() === name.toLowerCase());
+    if (exists) { adminToast('Category already exists','error'); return; }
+    state.tags.push({ name: name, icon: icon });
+    if (db) {
+        db.ref('settings/categories').set(state.tags).then(() => {
+            adminToast('Category added: ' + name,'success');
+            $('aCatName').value = ''; $('aCatIcon').value = '';
+            adminRenderCategories();
+        }).catch(e => adminToast('Error: ' + e.message,'error'));
+    } else {
+        adminToast('Category added locally (no DB)','info');
+        $('aCatName').value = ''; $('aCatIcon').value = '';
+        adminRenderCategories();
+    }
+}
+
+// Edit Category — open modal pre-filled with current values
+function adminOpenEditCategory(idx) {
+    if (idx < 0 || idx >= state.tags.length) { adminToast('Category not found','error'); return; }
+    const cat = normalizeTag(state.tags[idx]);
+    if (!cat.name) { adminToast('Category not found','error'); return; }
+    state._aEditCatIdx = idx;
+    $('aCatModalTitle').textContent = 'Edit Category';
+    $('aCatNameInput').value = cat.name;
+    $('aCatIconInput').value = cat.icon || '';
+    adminUpdateCatPreview();
+    $('aCategoryModal').classList.add('open');
+    setTimeout(() => $('aCatNameInput').focus(), 100);
+}
+
+function adminSaveEditCategory() {
+    const idx = state._aEditCatIdx;
+    if (idx === undefined || idx === null || idx < 0 || idx >= state.tags.length) {
+        adminToast('No category selected','error');
+        $('aCategoryModal').classList.remove('open');
+        return;
+    }
+    const newName = $('aCatNameInput').value.trim();
+    const newIcon = $('aCatIconInput').value.trim();
+    if (!newName) { adminToast('Category name is required','error'); return; }
+    // Check duplicate (case-insensitive, excluding current index)
+    const exists = state.tags.some((t, i) => i !== idx && tagName(t).toLowerCase() === newName.toLowerCase());
+    if (exists) { adminToast('Another category with this name already exists','error'); return; }
+    const oldName = tagName(state.tags[idx]);
+    state.tags[idx] = { name: newName, icon: newIcon };
+    if (db) {
+        db.ref('settings/categories').set(state.tags).then(() => {
+            // Optionally also update video tags if name changed
+            if (oldName !== newName) {
+                adminUpdateVideoTagsForRename(oldName, newName);
+            }
+            adminToast('Category updated: ' + newName,'success');
+            $('aCategoryModal').classList.remove('open');
+            state._aEditCatIdx = null;
+            adminRenderCategories();
+        }).catch(e => adminToast('Error: ' + e.message,'error'));
+    } else {
+        adminToast('Category updated locally (no DB)','info');
+        $('aCategoryModal').classList.remove('open');
+        state._aEditCatIdx = null;
+        adminRenderCategories();
+    }
+}
+
+// When renaming a category, update tags on videos that use the old name
+function adminUpdateVideoTagsForRename(oldName, newName) {
+    if (!db) return;
+    const updates = {};
+    Object.entries(state.adminVideosData).forEach(([id, v]) => {
+        const tags = v.tags || v.tag || '';
+        if (typeof tags === 'string' && tags.toLowerCase().includes(oldName.toLowerCase())) {
+            const newTags = tags.replace(new RegExp(escapeRegex(oldName), 'gi'), newName);
+            updates['videos/' + id + '/tags'] = newTags;
+        } else if (Array.isArray(tags) && tags.some(t => String(t).toLowerCase() === oldName.toLowerCase())) {
+            const newTags = tags.map(t => String(t).toLowerCase() === oldName.toLowerCase() ? newName : t);
+            updates['videos/' + id + '/tags'] = newTags;
+        }
+    });
+    const count = Object.keys(updates).length;
+    if (count > 0) {
+        db.ref().update(updates).then(() => {
+            adminToast('Also updated tags on ' + count + ' video(s)','info');
+        }).catch(e => console.warn('Video tag update failed:', e));
+    }
+}
+
+function adminUpdateCatPreview() {
+    const name = $('aCatNameInput').value.trim() || 'Category Name';
+    const icon = $('aCatIconInput').value.trim() || 'fas fa-tag';
+    $('aCatPreviewName').textContent = name;
+    // Sanitize icon class (only allow fa- classes)
+    const safeIcon = icon.replace(/[^a-z0-9\s-]/gi, '').trim();
+    $('aCatPreviewIcon').className = safeIcon || 'fas fa-tag';
+}
+
+function adminCatActions(e) {
+    const editBtn = e.target.closest('.a-edit-cat');
+    const delBtn = e.target.closest('.a-del-cat');
+    if (editBtn) {
+        const idx = parseInt(editBtn.dataset.idx);
+        if (!isNaN(idx)) adminOpenEditCategory(idx);
+        return;
+    }
+    if (delBtn) {
+        const idx = parseInt(delBtn.dataset.idx);
+        const cat = delBtn.dataset.cat;
+        if (isNaN(idx) || idx < 0 || idx >= state.tags.length) return;
+        adminConfirm('Delete Category', 'Delete <strong>' + escHtml(cat) + '</strong>?<br>Videos with this tag will not be deleted (but will no longer match this category).', () => {
+            state.tags.splice(idx, 1);
+            if (db) {
+                db.ref('settings/categories').set(state.tags).then(() => {
+                    adminToast('Category deleted','success');
+                    adminRenderCategories();
+                }).catch(e => adminToast('Error: ' + e.message,'error'));
+            } else {
+                adminToast('Category deleted locally','info');
+                adminRenderCategories();
+            }
+        });
+    }
+}
+
+// ===== ADMIN GIFT CODES =====
+function adminRenderGifts() {
+    const tbody = $('aGiftTbody');
+    const q = ($('aGiftSearch').value || '').toLowerCase();
+    const keys = Object.keys(state.adminGiftsData);
+    if (!keys.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-gift"></i><p>No gift codes</p></div></td></tr>'; return; }
+    keys.sort((a,b) => (state.adminGiftsData[b].createdAt||0) - (state.adminGiftsData[a].createdAt||0));
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const g = state.adminGiftsData[k];
+        return k.toLowerCase().includes(q) || (g.package||'').toLowerCase().includes(q) || (g.status||'').toLowerCase().includes(q);
+    });
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No match</p></div></td></tr>'; return; }
+    tbody.innerHTML = filtered.map(k => {
+        const g = state.adminGiftsData[k];
+        const badge = g.status === 'active' ? '<span class="admin-badge admin-badge-active"><i class="fas fa-check"></i> Active</span>' : '<span class="admin-badge admin-badge-used"><i class="fas fa-times"></i> Used</span>';
+        const date = g.createdAt ? new Date(g.createdAt).toLocaleDateString() : 'N/A';
+        return '<tr><td><span class="admin-code-cell" data-code="' + escAttr(k) + '">' + escHtml(k) + '</span></td><td style="color:var(--warning)">' + (g.amount||0) + '</td><td>' + escHtml(g.package||'-') + '</td><td>' + badge + '</td><td>' + date + '</td><td><div class="act-cell"><button class="admin-btn admin-btn-danger admin-btn-sm a-del-gift" data-code="' + escAttr(k) + '"><i class="fas fa-trash"></i></button></div></td></tr>';
+    }).join('');
+}
+
+function adminCreateGift() {
+    const amount = parseInt($('aGiftAmount').value, 10);
+    const pkg = $('aGiftPackage').value.trim() || 'General';
+    if (isNaN(amount) || amount <= 0) { adminToast('Amount must be greater than 0','error'); return; }
+    if (amount > 100000) { adminToast('Amount too large (max 100000)','error'); return; }
+    if (!db) { adminToast('Database not connected','error'); return; }
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing chars (0/O, 1/I)
+    let code = 'GIFT-';
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        const arr = new Uint8Array(8);
+        window.crypto.getRandomValues(arr);
+        for (let i = 0; i < 8; i++) code += chars[arr[i] % chars.length];
+    } else {
+        for (let i = 0; i < 8; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    if (state.adminGiftsData[code]) {
+        // Collision — append extra random chars
+        for (let i = 0; i < 4; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    db.ref('gifts/' + code).set({ amount, package:pkg, status:'active', createdAt:Date.now() }).then(() => {
+        adminToast('Code created: ' + code,'success');
+        copyToClipboard(code);
+        $('aGiftAmount').value = ''; $('aGiftPackage').value = '';
+    }).catch(e => adminToast('Error: ' + e.message,'error'));
+}
+
+function adminGiftActions(e) {
+    const copyEl = e.target.closest('.admin-code-cell');
+    if (copyEl) { copyToClipboard(copyEl.dataset.code); adminToast('Copied!','success'); return; }
+    const delBtn = e.target.closest('.a-del-gift');
+    if (delBtn) {
+        const code = delBtn.dataset.code;
+        adminConfirm('Delete Gift Code', 'Delete <strong>' + escHtml(code) + '</strong>?', () => {
+            db.ref('gifts/' + code).remove().then(() => adminToast('Code deleted','success')).catch(e => adminToast('Error: ' + e.message,'error'));
+        });
+    }
+}
+
+// ===== ADMIN USERS =====
+function adminRenderUsers() {
+    const tbody = $('aUserTbody');
+    const q = ($('aUserSearch').value || '').toLowerCase();
+    const keys = Object.keys(state.adminUsersData);
+    if (!keys.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-users"></i><p>No users</p></div></td></tr>'; return; }
+    const filtered = keys.filter(k => {
+        if (!q) return true;
+        const u = state.adminUsersData[k];
+        return (u.firstName||u.name||'').toLowerCase().includes(q) || (u.username||'').toLowerCase().includes(q);
+    });
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="admin-empty"><i class="fas fa-search"></i><p>No match</p></div></td></tr>'; return; }
+    tbody.innerHTML = filtered.map(k => {
+        const u = state.adminUsersData[k];
+        const name = u.firstName ? (u.firstName + ' ' + (u.lastName||'')) : (u.name||'-');
+        const favCount = Array.isArray(u.favorites) ? u.favorites.length : (u.favorites ? Object.keys(u.favorites).length : 0);
+        const purchCount = Array.isArray(u.purchased) ? u.purchased.length : (u.purchased ? Object.keys(u.purchased).length : 0);
+        return '<tr><td>' + escHtml(name) + '</td><td>' + escHtml(u.username ? '@'+u.username : '-') + '</td><td style="color:var(--warning)">' + (u.balance||0) + '</td><td>' + favCount + '</td><td>' + purchCount + '</td><td><div class="act-cell"><button class="admin-btn admin-btn-ghost admin-btn-sm a-edit-bal" data-uid="' + escAttr(k) + '" title="Edit Balance"><i class="fas fa-coins"></i></button><button class="admin-btn admin-btn-danger admin-btn-sm a-del-user" data-uid="' + escAttr(k) + '" title="Delete User"><i class="fas fa-trash"></i></button></div></td></tr>';
+    }).join('');
+}
+
+function adminUserActions(e) {
+    const editBtn = e.target.closest('.a-edit-bal');
+    const delBtn = e.target.closest('.a-del-user');
+    if (editBtn) {
+        const uid = editBtn.dataset.uid;
+        const u = state.adminUsersData[uid];
+        if (!u) { adminToast('User not found','error'); return; }
+        state._aBalanceUid = uid;
+        const name = u.firstName ? (u.firstName + ' ' + (u.lastName||'')) : (u.name||uid);
+        $('aBalanceUserName').textContent = name;
+        $('aBalanceCurrent').textContent = u.balance || 0;
+        $('aBalanceNewVal').value = u.balance || 0;
+        $('aBalanceModal').classList.add('open');
+    }
+    if (delBtn) {
+        const uid = delBtn.dataset.uid;
+        const u = state.adminUsersData[uid];
+        const name = u ? (u.firstName || u.name || uid) : uid;
+        adminConfirm('Delete User', 'Delete <strong>' + escHtml(name) + '</strong>? This cannot be undone.', () => {
+            db.ref('users/' + uid).remove().then(() => adminToast('User deleted','success')).catch(e => adminToast('Error: ' + e.message,'error'));
+        });
+    }
+}
+
+function adminSaveBalance() {
+    if (!state._aBalanceUid) return;
+    const newBal = parseInt($('aBalanceNewVal').value);
+    if (isNaN(newBal) || newBal < 0) { adminToast('Invalid amount','error'); return; }
+    db.ref('users/' + state._aBalanceUid + '/balance').set(newBal).then(() => {
+        adminToast('Balance updated to ' + newBal,'success');
+        $('aBalanceModal').classList.remove('open');
+        state._aBalanceUid = null;
+    }).catch(e => adminToast('Error: ' + e.message,'error'));
+}
+
+// ===== ADMIN SETTINGS =====
+function adminChangePass() {
+    const cur = $('aCurrentPass').value;
+    const newP = $('aNewPass').value;
+    const conf = $('aConfirmPass').value;
+    if (cur !== getAdminPass()) { adminToast('Current password incorrect','error'); return; }
+    if (newP.length < 6) { adminToast('Password must be at least 6 characters','error'); return; }
+    if (newP.length > 128) { adminToast('Password too long (max 128)','error'); return; }
+    if (newP !== conf) { adminToast('Passwords do not match','error'); return; }
+    // Save new password to Firebase
+    if (db) {
+        db.ref('settings/adminPassword').set(newP).then(() => {
+            state._adminFirebasePass = newP;
+            _adminAuthSession = true;
+            adminToast('Password updated & saved to database','success');
+        }).catch(e => adminToast('Error saving password: ' + e.message,'error'));
+    } else {
+        adminToast('Cannot save - no database connection','error');
+    }
+    $('aCurrentPass').value = ''; $('aNewPass').value = ''; $('aConfirmPass').value = '';
+}
+
+// ===== EVENT BINDINGS =====
+function bindEvents() {
+    $('searchToggle').addEventListener('click', toggleSearch);
+    $('searchInput').addEventListener('keyup', e => {
+        if (e.key === 'Enter' || $('searchInput').value === '') searchVideos();
+        else { clearTimeout(state._searchTimer); state._searchTimer = setTimeout(searchVideos, 600); }
+    });
+    $('balanceBadge').addEventListener('click', () => { updateBalance(); notify('Balance: ' + state.userData.balance + ' coins','coins'); });
+    $('bigPlayBtn').addEventListener('click', handlePlayClick);
+    $('playerClose').addEventListener('click', closePlayer);
+    $('backBtn').addEventListener('click', goBack);
+    $('descToggle').addEventListener('click', toggleDesc);
+    $('shareBtn').addEventListener('click', handleShare);
+    $('copyBtn').addEventListener('click', handleCopy);
+    $('favBtn').addEventListener('click', toggleFavorite);
+    $('modalCancel').addEventListener('click', closeModal2);
+    $('modalBuy').addEventListener('click', confirmPurchase);
+
+    document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+        item.addEventListener('click', e => { e.preventDefault(); navigateTo(item.dataset.page); });
+    });
+
+    $('watchAdBtn').addEventListener('click', watchAd);
+    $('dailyCheckinBtn').addEventListener('click', dailyCheckin);
+    $('redeemBtn').addEventListener('click', redeemGiftCode);
+    $('giftCodeInput').addEventListener('keyup', e => { if (e.key === 'Enter') redeemGiftCode(); });
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+}
+
+// ===== INIT =====
+// ===== CHECK URL FOR SHARED VIDEO =====
+function checkUrlForVideo() {
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = urlParams.get('v');
+        if (videoId) {
+            const vid = parseInt(videoId);
+            if (!isNaN(vid)) {
+                state._startVideoId = vid;
+                return true;
+            }
+        }
+    } catch(e) {}
+    try {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#v=')) {
+            const vid = parseInt(hash.substring(3));
+            if (!isNaN(vid)) {
+                state._startVideoId = vid;
+                return true;
+            }
+        }
+    } catch(e) {}
+    return false;
+}
+
+function init() {
+    checkUrlForVideo();  // Check if shared video link was opened
+    initTelegram();  // First: get userId (from Telegram OR browser UUID)
+    // NOTE: initTelegram() handles calling initTheme() and loadUserData()/loadLocalData()
+    // internally once userId is determined. Calling them here directly would be redundant
+    // and could cause race conditions.
+    loadVideos();
+    bindEvents();
+    updateOnlineStatus();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
+
+})();
+</script>
+</body>
+</html>
