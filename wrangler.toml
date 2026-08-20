@@ -1,0 +1,13 @@
+# Cloudflare Pages Configuration
+# Run locally: npm run pages:dev
+# Deploy: Connect this GitHub repo in Cloudflare Pages Dashboard
+# Build command: npx @cloudflare/next-on-pages
+# Build output directory: .vercel/output/static
+
+name = "myflix"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NODE_ENV = "production"
