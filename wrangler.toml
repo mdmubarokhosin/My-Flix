@@ -1,0 +1,23 @@
+# ============================================================
+# Cloudflare Pages / Workers Configuration
+# ============================================================
+# Run locally:     npm run pages:dev
+# Deploy:          npm run pages:deploy
+# Or connect this GitHub repo in Cloudflare Pages Dashboard with:
+#   Build command:        npx @cloudflare/next-on-pages@1
+#   Build output dir:     .vercel/output/static
+#   Root directory:       (repo root)
+# ============================================================
+#
+# IMPORTANT: All secret values (Firebase keys, JWT secret, bot token,
+# payment keys, webhook secret) MUST be set in the Cloudflare Pages
+# dashboard → Settings → Environment Variables — NOT in this file.
+# This file only contains non-secret build/runtime vars.
+
+name = "myflix"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NODE_ENV = "production"
